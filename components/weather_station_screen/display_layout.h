@@ -102,6 +102,7 @@ std::string format_age(uint32_t age_seconds, bool heard);
 std::string format_station_values(const StationView &station);
 std::string humanize_condition(const std::string &condition);
 size_t selected_secondary_index(size_t count, uint32_t now_ms);
+uint8_t wifi_signal_level(bool available, int16_t rssi_dbm);
 Scene build_scene(const ScreenSnapshot &snapshot, const LayoutOptions &options);
 const char *color_hex(ColorRole color);
 

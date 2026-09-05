@@ -126,6 +126,36 @@ void add_card(Scene &scene, int y, int height) {
   add_rect(scene, 6, y, 3, height, ColorRole::ACCENT, true);
 }
 
+void draw_wifi_icon(Scene &scene, bool available, int16_t rssi_dbm) {
+  const uint8_t level = wifi_signal_level(available, rssi_dbm);
+  const auto level_color = [&](uint8_t required) {
+    return available && level >= required ? ColorRole::ACCENT : ColorRole::MUTED;
+  };
+
+  const ColorRole outer = level_color(3);
+  add_line(scene, 208, 15, 214, 10, outer);
+  add_line(scene, 214, 10, 220, 8, outer);
+  add_line(scene, 220, 8, 226, 10, outer);
+  add_line(scene, 226, 10, 232, 15, outer);
+
+  const ColorRole middle = level_color(2);
+  add_line(scene, 212, 19, 216, 15, middle);
+  add_line(scene, 216, 15, 220, 14, middle);
+  add_line(scene, 220, 14, 224, 15, middle);
+  add_line(scene, 224, 15, 228, 19, middle);
+
+  const ColorRole inner = level_color(1);
+  add_line(scene, 216, 23, 220, 20, inner);
+  add_line(scene, 220, 20, 224, 23, inner);
+  add_circle(
+      scene, 220, 27, 2, available ? ColorRole::ACCENT : ColorRole::MUTED, true);
+
+  if (!available) {
+    add_line(scene, 216, 24, 224, 32, ColorRole::WARNING);
+    add_line(scene, 224, 24, 216, 32, ColorRole::WARNING);
+  }
+}
+
 }  // namespace
 
 std::string format_time(uint8_t hour, uint8_t minute, bool use_24_hour) {
@@ -227,10 +257,29 @@ size_t selected_secondary_index(size_t count, uint32_t now_ms) {
   return count == 0U ? 0U : (now_ms / 2000U) % count;
 }
 
+uint8_t wifi_signal_level(bool available, int16_t rssi_dbm) {
+  if (!available) {
+    return 0;
+  }
+  if (rssi_dbm >= -55) {
+    return 3;
+  }
+  if (rssi_dbm >= -67) {
+    return 2;
+  }
+  if (rssi_dbm >= -78) {
+    return 1;
+  }
+  return 0;
+}
+
 Scene build_scene(const ScreenSnapshot &snapshot, const LayoutOptions &options) {
   Scene scene;
-  scene.reserve(48);
+  scene.reserve(64);
   add_rect(scene, 0, 0, 240, 240, ColorRole::BACKGROUND, true);
+  if (options.show_network) {
+    draw_wifi_icon(scene, snapshot.wifi_valid, snapshot.wifi_dbm);
+  }
   int y = 5;
 
   if (options.show_time) {

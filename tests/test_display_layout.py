@@ -44,6 +44,7 @@ def test_committed_previews_match_production_layout(tmp_path):
         "long-age",
         "secondary-cycle-a",
         "secondary-cycle-b",
+        "wifi-unavailable",
     ):
         rendered = tmp_path / f"{scenario}.svg"
         subprocess.run([str(executable), scenario, str(rendered)], check=True)

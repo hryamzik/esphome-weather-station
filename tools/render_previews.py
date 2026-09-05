@@ -15,6 +15,7 @@ SCENARIOS = (
     "long-age",
     "secondary-cycle-a",
     "secondary-cycle-b",
+    "wifi-unavailable",
 )
 
 

@@ -73,6 +73,9 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
   } else if (name == "secondary-cycle-b") {
     snapshot.now_ms = 2000;
     options.use_24_hour = true;
+  } else if (name == "wifi-unavailable") {
+    snapshot.wifi_valid = false;
+    snapshot.ip_address.clear();
   } else {
     throw std::runtime_error("unknown preview scenario: " + name);
   }

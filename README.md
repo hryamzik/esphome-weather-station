@@ -78,6 +78,7 @@ imports. Sunrise/sunset values may be clock times or preformatted countdowns.
 <img src="docs/previews/long-age.svg" alt="Long station age preview" width="240">
 <img src="docs/previews/secondary-cycle-a.svg" alt="First secondary cycle preview" width="240">
 <img src="docs/previews/secondary-cycle-b.svg" alt="Second secondary cycle preview" width="240">
+<img src="docs/previews/wifi-unavailable.svg" alt="Unavailable Wi-Fi preview" width="240">
 
 ```yaml
 time:
@@ -115,10 +116,12 @@ display:
     id(weather_screen).render(it);
 ```
 
-All seven sections can be hidden independently. Icons are original primitive
-vector glyphs drawn by this project; no third-party weather icon set is
-embedded. The example obtains Roboto from Google Fonts under OFL-1.1; see
-`THIRD_PARTY_NOTICES.md`.
+All seven sections can be hidden independently. The network section controls
+both the detailed bottom RSSI/IP row and the traditional top-right Wi-Fi icon.
+The icon has distinct weak/fair/good levels and an explicit crossed-out state
+when RSSI is unavailable. Icons are original primitive vector glyphs drawn by
+this project; no third-party weather icon set is embedded. The example obtains
+Roboto from Google Fonts under OFL-1.1; see `THIRD_PARTY_NOTICES.md`.
 
 ## Routing behavior
 

@@ -2,6 +2,17 @@
 <title>ESPHome Weather Station 240x240 preview</title>
 <style>text{font-family:Roboto,Arial,sans-serif}</style>
 <rect x="0" y="0" width="240" height="240" rx="3" fill="#07111f"/>
+<line x1="208" y1="15" x2="214" y2="10" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="214" y1="10" x2="220" y2="8" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="220" y1="8" x2="226" y2="10" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="226" y1="10" x2="232" y2="15" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="212" y1="19" x2="216" y2="15" stroke="#36d1c4" stroke-width="2"/>
+<line x1="216" y1="15" x2="220" y2="14" stroke="#36d1c4" stroke-width="2"/>
+<line x1="220" y1="14" x2="224" y2="15" stroke="#36d1c4" stroke-width="2"/>
+<line x1="224" y1="15" x2="228" y2="19" stroke="#36d1c4" stroke-width="2"/>
+<line x1="216" y1="23" x2="220" y2="20" stroke="#36d1c4" stroke-width="2"/>
+<line x1="220" y1="20" x2="224" y2="23" stroke="#36d1c4" stroke-width="2"/>
+<circle cx="220" cy="27" r="2" fill="#36d1c4"/>
 <text x="120" y="5" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">2:37 PM</text>
 <text x="120" y="40" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">Sat, Sep 5, 2026</text>
 <rect x="6" y="59" width="228" height="38" rx="3" fill="#10243a"/>

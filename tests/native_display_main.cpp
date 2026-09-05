@@ -15,6 +15,15 @@ bool scene_contains(
   });
 }
 
+size_t wifi_icon_commands(
+    const weather_station_display::Scene &scene,
+    weather_station_display::ColorRole color) {
+  return static_cast<size_t>(std::count_if(scene.begin(), scene.end(), [&](const auto &command) {
+    return command.x1 >= 208 && command.y1 <= 32 && command.color == color &&
+           command.kind != weather_station_display::CommandKind::TEXT;
+  }));
+}
+
 }  // namespace
 
 int main() {
@@ -38,6 +47,11 @@ int main() {
   assert(selected_secondary_index(3, 1999) == 0);
   assert(selected_secondary_index(3, 2000) == 1);
   assert(selected_secondary_index(3, 6000) == 0);
+  assert(wifi_signal_level(false, -40) == 0);
+  assert(wifi_signal_level(true, -80) == 0);
+  assert(wifi_signal_level(true, -78) == 1);
+  assert(wifi_signal_level(true, -67) == 2);
+  assert(wifi_signal_level(true, -55) == 3);
 
   ScreenSnapshot snapshot;
   snapshot.time_valid = true;
@@ -64,6 +78,8 @@ int main() {
   assert(!scene_contains(first, "Balcony"));
   assert(scene_contains(first, "Garden"));
   assert(scene_contains(first, "WiFi -58 dBm"));
+  assert(wifi_icon_commands(first, ColorRole::ACCENT) == 7);
+  assert(wifi_icon_commands(first, ColorRole::MUTED) == 4);
 
   snapshot.now_ms = 2000;
   auto second = build_scene(snapshot, options);
@@ -75,6 +91,14 @@ int main() {
   const auto compact = build_scene(snapshot, options);
   assert(!scene_contains(compact, "WiFi"));
   assert(!scene_contains(compact, "Rise"));
+  assert(wifi_icon_commands(compact, ColorRole::ACCENT) == 0);
+  assert(wifi_icon_commands(compact, ColorRole::MUTED) == 0);
+
+  options.show_network = true;
+  snapshot.wifi_valid = false;
+  const auto disconnected = build_scene(snapshot, options);
+  assert(scene_contains(disconnected, "WiFi -- dBm"));
+  assert(wifi_icon_commands(disconnected, ColorRole::WARNING) == 2);
 
   for (const auto &command : first) {
     assert(command.x1 >= 0 && command.x1 <= 240);
