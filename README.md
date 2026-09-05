@@ -62,7 +62,10 @@ weather_station:
 
 Receiver pins vary between device revisions; verify your board before flashing.
 See `examples/geekmagic-smalltv-ultra.yaml` for the complete display and
-hardware configuration.
+hardware configuration. Its 12.5% striped display buffer is intentional: a
+quarter-screen RGB565 buffer consumes about 28.8 KB and leaves too little
+runtime heap on the 1 MB ESP8266 once encrypted API, Wi-Fi, and RF decoding are
+enabled.
 
 ## 240×240 single-screen display
 

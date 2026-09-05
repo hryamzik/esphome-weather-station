@@ -157,6 +157,7 @@ display:
     dc_pin: GPIO0
     reset_pin: GPIO2
     color_depth: 8
+    buffer_size: 12.5%
     spi_mode: mode3
     update_interval: 1s
     lambda: |-
