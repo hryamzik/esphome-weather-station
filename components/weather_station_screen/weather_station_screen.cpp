@@ -24,6 +24,7 @@ void WeatherStationScreen::snapshot_(
     if (snapshot.time_valid) {
       snapshot.hour = now.hour;
       snapshot.minute = now.minute;
+      snapshot.second = now.second;
       snapshot.year = now.year;
       snapshot.month = now.month;
       snapshot.day = now.day_of_month;
@@ -32,6 +33,17 @@ void WeatherStationScreen::snapshot_(
   }
   if (this->condition_ != nullptr && this->condition_->has_state()) {
     snapshot.condition.assign(this->condition_->state.c_str());
+  }
+  if (this->weather_temperature_ != nullptr &&
+      this->weather_temperature_->has_state() &&
+      std::isfinite(this->weather_temperature_->state)) {
+    const long tenths =
+        std::lround(this->weather_temperature_->state * 10.0f);
+    if (tenths >= -32768L && tenths <= 32767L) {
+      snapshot.weather_temperature_valid = true;
+      snapshot.weather_temperature_tenths_c =
+          static_cast<int16_t>(tenths);
+    }
   }
   if (this->sun_state_ != nullptr && this->sun_state_->has_state()) {
     snapshot.is_night = this->sun_state_->state == "below_horizon";

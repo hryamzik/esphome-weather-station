@@ -32,6 +32,9 @@ station rendering.
 The sun row consumes already-formatted rise/set text plus an optional bounded
 0–100 progress value. Day/night ordering is a presentation decision, but
 timezone and astronomy calculations remain in Home Assistant.
+Likewise, the optional current-weather temperature arrives as a normalized
+numeric sensor value; layout formatting uses fixed stack buffers and does not
+parse Home Assistant display strings.
 
 Routing invariants:
 

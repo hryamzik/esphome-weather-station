@@ -26,6 +26,9 @@ class WeatherStationScreen {
     this->large_font_ = large;
   }
   void set_condition(text_sensor::TextSensor *sensor) { this->condition_ = sensor; }
+  void set_weather_temperature(sensor::Sensor *sensor) {
+    this->weather_temperature_ = sensor;
+  }
   void set_sun_state(text_sensor::TextSensor *sensor) { this->sun_state_ = sensor; }
   void set_sunrise(text_sensor::TextSensor *sensor) { this->sunrise_ = sensor; }
   void set_sunset(text_sensor::TextSensor *sensor) { this->sunset_ = sensor; }
@@ -34,6 +37,7 @@ class WeatherStationScreen {
   void set_ip_address(text_sensor::TextSensor *sensor) { this->ip_address_ = sensor; }
 
   void set_use_24_hour(bool value) { this->options_.use_24_hour = value; }
+  void set_show_seconds(bool value) { this->options_.show_seconds = value; }
   void set_show_time(bool value) { this->options_.show_time = value; }
   void set_show_date(bool value) { this->options_.show_date = value; }
   void set_show_condition(bool value) { this->options_.show_condition = value; }
@@ -54,6 +58,7 @@ class WeatherStationScreen {
   font::Font *medium_font_{nullptr};
   font::Font *large_font_{nullptr};
   text_sensor::TextSensor *condition_{nullptr};
+  sensor::Sensor *weather_temperature_{nullptr};
   text_sensor::TextSensor *sun_state_{nullptr};
   text_sensor::TextSensor *sunrise_{nullptr};
   text_sensor::TextSensor *sunset_{nullptr};

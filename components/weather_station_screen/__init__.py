@@ -15,6 +15,7 @@ CONF_IP_ADDRESS_ID = "ip_address_id"
 CONF_LARGE = "large"
 CONF_MEDIUM = "medium"
 CONF_SECTIONS = "sections"
+CONF_SHOW_SECONDS = "show_seconds"
 CONF_SHOW_CONDITION = "condition"
 CONF_SHOW_DATE = "date"
 CONF_SHOW_NETWORK = "network"
@@ -29,6 +30,7 @@ CONF_SUNRISE_ID = "sunrise_id"
 CONF_SUNSET_ID = "sunset_id"
 CONF_TIME_ID = "time_id"
 CONF_WEATHER_STATION_ID = "weather_station_id"
+CONF_WEATHER_TEMPERATURE_ID = "weather_temperature_id"
 CONF_WIFI_SIGNAL_ID = "wifi_signal_id"
 
 weather_station_screen_ns = cg.esphome_ns.namespace("weather_station_screen")
@@ -65,7 +67,9 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_HOUR_FORMAT, default="12h"): cv.one_of(
             "12h", "24h", lower=True
         ),
+        cv.Optional(CONF_SHOW_SECONDS, default=True): cv.boolean,
         cv.Optional(CONF_CONDITION_ID): cv.use_id(text_sensor.TextSensor),
+        cv.Optional(CONF_WEATHER_TEMPERATURE_ID): cv.use_id(sensor.Sensor),
         cv.Optional(CONF_SUN_STATE_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_SUNRISE_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_SUNSET_ID): cv.use_id(text_sensor.TextSensor),
@@ -90,9 +94,11 @@ async def to_code(config):
     cg.add(var.set_time(clock))
     cg.add(var.set_fonts(small, medium, large))
     cg.add(var.set_use_24_hour(config[CONF_HOUR_FORMAT] == "24h"))
+    cg.add(var.set_show_seconds(config[CONF_SHOW_SECONDS]))
 
     optional_setters = (
         (CONF_CONDITION_ID, var.set_condition),
+        (CONF_WEATHER_TEMPERATURE_ID, var.set_weather_temperature),
         (CONF_SUN_STATE_ID, var.set_sun_state),
         (CONF_SUNRISE_ID, var.set_sunrise),
         (CONF_SUNSET_ID, var.set_sunset),

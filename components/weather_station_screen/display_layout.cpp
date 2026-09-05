@@ -219,16 +219,28 @@ void draw_wifi_icon(
 void format_time(
     uint8_t hour,
     uint8_t minute,
+    uint8_t second,
     bool use_24_hour,
+    bool show_seconds,
     char *output,
     size_t output_size) {
   if (use_24_hour) {
-    std::snprintf(output, output_size, "%02u:%02u", hour, minute);
+    if (show_seconds) {
+      std::snprintf(output, output_size, "%02u:%02u:%02u", hour, minute, second);
+    } else {
+      std::snprintf(output, output_size, "%02u:%02u", hour, minute);
+    }
   } else {
     const uint8_t display_hour = hour % 12U == 0U ? 12U : hour % 12U;
-    std::snprintf(
-        output, output_size, "%u:%02u %s", display_hour, minute,
-        hour < 12U ? "AM" : "PM");
+    if (show_seconds) {
+      std::snprintf(
+          output, output_size, "%u:%02u:%02u %s", display_hour, minute, second,
+          hour < 12U ? "AM" : "PM");
+    } else {
+      std::snprintf(
+          output, output_size, "%u:%02u %s", display_hour, minute,
+          hour < 12U ? "AM" : "PM");
+    }
   }
 }
 
@@ -361,19 +373,22 @@ void build_scene_impl(
   if (options.show_network) {
     draw_wifi_icon(scene, snapshot.wifi_valid, snapshot.wifi_dbm);
   }
-  int y = 5;
+  int y = 4;
   char text[80];
 
   if (options.show_time) {
     if (snapshot.time_valid) {
       format_time(
-          snapshot.hour, snapshot.minute, options.use_24_hour, text, sizeof(text));
+          snapshot.hour, snapshot.minute, snapshot.second, options.use_24_hour,
+          options.show_seconds, text, sizeof(text));
     } else {
-      std::snprintf(text, sizeof(text), "--:--");
+      std::snprintf(
+          text, sizeof(text), options.show_seconds ? "--:--:--" : "--:--");
     }
     add_text(
-        scene, 120, y, FontRole::LARGE, ColorRole::TEXT, TextAlign::CENTER, text);
-    y += 35;
+        scene, options.show_network ? 108 : 120, y, FontRole::LARGE,
+        ColorRole::TEXT, TextAlign::CENTER, text);
+    y += 36;
   }
   if (options.show_date) {
     if (snapshot.time_valid) {
@@ -384,51 +399,64 @@ void build_scene_impl(
       std::snprintf(text, sizeof(text), "Waiting for Home Assistant time");
     }
     add_text(
-        scene, 120, y, FontRole::SMALL, ColorRole::MUTED, TextAlign::CENTER, text);
-    y += 19;
+        scene, 120, y, FontRole::MEDIUM, ColorRole::MUTED, TextAlign::CENTER,
+        text);
+    y += 23;
   }
   if (options.show_condition) {
-    add_card(scene, y, 38);
+    add_card(scene, y, 41);
     draw_condition_icon(
-        scene, 28, y + 18, snapshot.condition.c_str(), snapshot.is_night);
+        scene, 28, y + 20, snapshot.condition.c_str(), snapshot.is_night);
     char condition[32];
     humanize_condition(snapshot.condition.c_str(), text, sizeof(text));
-    ellipsize(text, 21, condition, sizeof(condition));
+    ellipsize(
+        text, snapshot.weather_temperature_valid ? 14U : 21U, condition,
+        sizeof(condition));
     add_text(
-        scene, 51, y + 10, FontRole::MEDIUM, ColorRole::TEXT, TextAlign::LEFT,
+        scene, 51, y + 11, FontRole::MEDIUM, ColorRole::TEXT, TextAlign::LEFT,
         condition);
-    y += 43;
+    if (snapshot.weather_temperature_valid) {
+      const int32_t temperature = snapshot.weather_temperature_tenths_c;
+      const int32_t absolute = temperature < 0 ? -temperature : temperature;
+      std::snprintf(
+          text, sizeof(text), "%s%d.%d°C", temperature < 0 ? "-" : "",
+          static_cast<int>(absolute / 10), static_cast<int>(absolute % 10));
+      add_text(
+          scene, 226, y + 11, FontRole::MEDIUM, ColorRole::ACCENT,
+          TextAlign::RIGHT, text);
+    }
+    y += 46;
   }
   if (options.show_primary) {
-    add_card(scene, y, 45);
+    add_card(scene, y, 50);
     char name[24];
     ellipsize(
         snapshot.primary.name.empty() ? "Primary station"
                                       : snapshot.primary.name.c_str(),
-        18, name, sizeof(name));
+        9, name, sizeof(name));
     add_text(
-        scene, 14, y + 5, FontRole::SMALL, ColorRole::ACCENT, TextAlign::LEFT,
+        scene, 14, y + 7, FontRole::SMALL, ColorRole::ACCENT, TextAlign::LEFT,
         name);
     format_age(
         snapshot.primary.age_seconds, snapshot.primary.heard, text, sizeof(text));
     add_text(
-        scene, 226, y + 5, FontRole::SMALL, ColorRole::MUTED, TextAlign::RIGHT,
+        scene, 14, y + 27, FontRole::SMALL, ColorRole::MUTED, TextAlign::LEFT,
         text);
     format_station_values(snapshot.primary, text, sizeof(text));
     add_text(
-        scene, 120, y + 21, FontRole::LARGE, ColorRole::TEXT, TextAlign::CENTER,
+        scene, 228, y + 13, FontRole::LARGE, ColorRole::TEXT, TextAlign::RIGHT,
         text);
-    y += 50;
+    y += 55;
   }
   if (options.show_secondary && snapshot.secondary_count != 0U) {
     const auto &secondary =
         snapshot.secondaries[selected_secondary_index(
             snapshot.secondary_count, snapshot.now_ms)];
-    add_card(scene, y, 25);
+    add_card(scene, y, 27);
     char name[24];
     ellipsize(secondary.name.c_str(), 10, name, sizeof(name));
     add_text(
-        scene, 14, y + 6, FontRole::SMALL, ColorRole::MUTED, TextAlign::LEFT,
+        scene, 14, y + 7, FontRole::SMALL, ColorRole::MUTED, TextAlign::LEFT,
         name);
     char values[32];
     char age[32];
@@ -436,9 +464,9 @@ void build_scene_impl(
     format_age(secondary.age_seconds, secondary.heard, age, sizeof(age));
     std::snprintf(text, sizeof(text), "%s · %s", values, age);
     add_text(
-        scene, 226, y + 6, FontRole::SMALL, ColorRole::TEXT, TextAlign::RIGHT,
+        scene, 226, y + 7, FontRole::SMALL, ColorRole::TEXT, TextAlign::RIGHT,
         text);
-    y += 30;
+    y += 32;
   }
   if (options.show_sun) {
     const char *left_label = snapshot.is_night ? "Set" : "Rise";
@@ -490,7 +518,7 @@ void build_scene_impl(
           text, sizeof(text), "WiFi -- dBm  ·  %s",
           snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
     }
-    const int network_y = y + 3 < 226 ? y + 3 : 226;
+    const int network_y = y + 3 < 224 ? y + 3 : 224;
     add_text(
         scene, 120, network_y, FontRole::SMALL, ColorRole::MUTED,
         TextAlign::CENTER, text);

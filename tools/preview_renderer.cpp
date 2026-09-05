@@ -33,11 +33,14 @@ ScreenSnapshot base_snapshot() {
   snapshot.time_valid = true;
   snapshot.hour = 14;
   snapshot.minute = 37;
+  snapshot.second = 9;
   snapshot.year = 2026;
   snapshot.month = 9;
   snapshot.day = 5;
   snapshot.day_of_week = 7;
   snapshot.condition = "partlycloudy";
+  snapshot.weather_temperature_valid = true;
+  snapshot.weather_temperature_tenths_c = 184;
   snapshot.primary = {"Garden", true, 213, 47, 18};
   snapshot.add_secondary({"Greenhouse", true, 246, 61, 75});
   snapshot.add_secondary({"Balcony", true, 198, 52, 245});
@@ -58,6 +61,7 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
     snapshot.condition = "sunny";
     snapshot.hour = 10;
     snapshot.minute = 8;
+    snapshot.second = 42;
     snapshot.now_ms = 0;
     snapshot.sun_progress_percent = 31;
   } else if (name == "night") {
@@ -65,11 +69,13 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
     snapshot.is_night = true;
     snapshot.hour = 22;
     snapshot.minute = 14;
+    snapshot.second = 57;
     snapshot.now_ms = 2000;
     snapshot.sun_progress_percent = 64;
   } else if (name == "long-age") {
     snapshot.condition = "rainy";
     snapshot.primary.age_seconds = 15U * 86400U + 6U * 3600U;
+    snapshot.weather_temperature_valid = false;
     snapshot.secondaries[0].age_seconds = 3U * 86400U + 4U * 3600U;
     snapshot.sun_progress_valid = false;
     snapshot.now_ms = 0;

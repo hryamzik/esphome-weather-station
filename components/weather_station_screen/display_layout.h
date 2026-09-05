@@ -123,11 +123,14 @@ struct ScreenSnapshot {
   bool time_valid{false};
   uint8_t hour{0};
   uint8_t minute{0};
+  uint8_t second{0};
   uint16_t year{0};
   uint8_t month{0};
   uint8_t day{0};
   uint8_t day_of_week{1};
   FixedText<32> condition;
+  bool weather_temperature_valid{false};
+  int16_t weather_temperature_tenths_c{0};
   bool is_night{false};
   StationView primary;
   static constexpr size_t MAX_SECONDARIES = 8;
@@ -155,6 +158,7 @@ struct ScreenSnapshot {
 
 struct LayoutOptions {
   bool use_24_hour{false};
+  bool show_seconds{true};
   bool show_time{true};
   bool show_date{true};
   bool show_condition{true};
@@ -166,7 +170,7 @@ struct LayoutOptions {
 
 class Scene {
  public:
-  static constexpr size_t CAPACITY = 52;
+  static constexpr size_t CAPACITY = 56;
   static constexpr size_t TEXT_CAPACITY = 384;
 
   void clear() {
@@ -215,7 +219,13 @@ class Scene {
 };
 
 void format_time(
-    uint8_t hour, uint8_t minute, bool use_24_hour, char *output, size_t output_size);
+    uint8_t hour,
+    uint8_t minute,
+    uint8_t second,
+    bool use_24_hour,
+    bool show_seconds,
+    char *output,
+    size_t output_size);
 void format_date(
     uint16_t year,
     uint8_t month,

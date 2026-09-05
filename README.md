@@ -79,6 +79,9 @@ imports. Sunrise/sunset values may be clock times or preformatted countdowns.
 During daytime the sun row reads Rise → Set; at night it reads Set → Rise. An
 optional HA numeric sensor supplies 0–100% progress for the compact bar between
 them, keeping timezone and astronomy calculations out of the device.
+The condition card can also show an optional Home Assistant weather
+temperature supplied in Celsius. The clock includes seconds by default and
+remains configurable for 12- or 24-hour output.
 
 <img src="docs/previews/startup.svg" alt="Wi-Fi association startup view" width="240">
 <img src="docs/previews/day.svg" alt="Day display preview" width="240">
@@ -103,6 +106,10 @@ text_sensor:
 
 sensor:
   - platform: homeassistant
+    id: current_weather_temperature
+    entity_id: weather.home
+    attribute: temperature
+  - platform: homeassistant
     id: sun_progress
     entity_id: sensor.sun_cycle_progress
 
@@ -112,7 +119,9 @@ weather_station_screen:
   time_id: ha_time
   fonts: {small: font_small, medium: font_medium, large: font_large}
   hour_format: 12h # or 24h
+  show_seconds: true
   condition_id: current_condition
+  weather_temperature_id: current_weather_temperature
   sunrise_id: next_sunrise
   sun_progress_id: sun_progress
   sections:
@@ -139,15 +148,22 @@ state or is omitted. Icons are original primitive vector glyphs drawn by this
 project; no third-party weather icon set is embedded. The example obtains
 Roboto from Google Fonts under OFL-1.1; see `THIRD_PARTY_NOTICES.md`.
 
+The full layout reaches the bottom diagnostics baseline at y=221 while
+retaining a safe margin. The medium date and 41 px condition card lead into a
+50 px primary card: station name and age share the left column, while the
+large temperature/humidity value uses the right side. The worst-case
+`12:59:59 PM` clock is shifted left when the network icon is visible so their
+bounds do not overlap.
+
 ### ESP8266 memory budget
 
 The production render cycle is allocation-free: snapshots use fixed text and
 eight fixed secondary slots, and drawing commands stream directly to the
 display without an intermediate container. Host previews use a bounded scene
-with 52 fixed commands and a 384-byte text arena. Overflow is explicit and
+with 56 fixed commands and a 384-byte text arena. Overflow is explicit and
 host-tested; configured station entities are unaffected if more than eight
 secondaries exist, but only the first eight are display candidates. The
-ESPHome YAML interface is unchanged.
+new weather temperature input is optional; existing YAML remains valid.
 
 For the tested GeekMagic target, measure with encrypted API connected after at
 least one RF decode and display render:

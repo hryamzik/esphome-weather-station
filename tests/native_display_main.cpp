@@ -34,7 +34,7 @@ size_t sun_progress_commands(const weather_station_display::Scene &scene) {
       std::count_if(scene.begin(), scene.end(), [](const auto &command) {
         return command.kind != weather_station_display::CommandKind::TEXT &&
                command.x1 >= 79 && command.x1 <= 161 &&
-               command.y1 >= 185 && command.y1 <= 205;
+               command.y1 >= 200 && command.y1 <= 212;
       }));
 }
 
@@ -47,6 +47,31 @@ size_t wifi_icon_commands(
                command.color == color &&
                command.kind != weather_station_display::CommandKind::TEXT;
       }));
+}
+
+int estimated_text_width(
+    const weather_station_display::DrawCommand &command, const char *text) {
+  const int pixels_per_character =
+      command.font == weather_station_display::FontRole::LARGE
+          ? 11
+          : (command.font == weather_station_display::FontRole::MEDIUM ? 8 : 5);
+  return static_cast<int>(std::strlen(text)) * pixels_per_character;
+}
+
+int text_left(
+    const weather_station_display::DrawCommand &command, const char *text) {
+  const int width = estimated_text_width(command, text);
+  if (command.align == weather_station_display::TextAlign::CENTER) {
+    return command.x1 - width / 2;
+  }
+  return command.align == weather_station_display::TextAlign::RIGHT
+             ? command.x1 - width
+             : command.x1;
+}
+
+int text_right(
+    const weather_station_display::DrawCommand &command, const char *text) {
+  return text_left(command, text) + estimated_text_width(command, text);
 }
 
 }  // namespace
@@ -82,12 +107,12 @@ int main() {
       sizeof(ScreenSnapshot) <= 512U, "snapshot cache exceeded static RAM budget");
 
   char formatted[80];
-  format_time(0, 5, false, formatted, sizeof(formatted));
-  assert(std::strcmp(formatted, "12:05 AM") == 0);
-  format_time(12, 0, false, formatted, sizeof(formatted));
+  format_time(0, 5, 7, false, true, formatted, sizeof(formatted));
+  assert(std::strcmp(formatted, "12:05:07 AM") == 0);
+  format_time(12, 0, 59, false, false, formatted, sizeof(formatted));
   assert(std::strcmp(formatted, "12:00 PM") == 0);
-  format_time(23, 7, true, formatted, sizeof(formatted));
-  assert(std::strcmp(formatted, "23:07") == 0);
+  format_time(23, 7, 9, true, true, formatted, sizeof(formatted));
+  assert(std::strcmp(formatted, "23:07:09") == 0);
   format_date(2026, 9, 5, 7, formatted, sizeof(formatted));
   assert(std::strcmp(formatted, "Sat, Sep 5, 2026") == 0);
 
@@ -133,11 +158,14 @@ int main() {
   snapshot.time_valid = true;
   snapshot.hour = 14;
   snapshot.minute = 37;
+  snapshot.second = 9;
   snapshot.year = 2026;
   snapshot.month = 9;
   snapshot.day = 5;
   snapshot.day_of_week = 7;
   snapshot.condition = "partlycloudy";
+  snapshot.weather_temperature_valid = true;
+  snapshot.weather_temperature_tenths_c = 184;
   snapshot.primary = {"Garden", true, 213, 47, 18};
   assert(snapshot.add_secondary({"Greenhouse", true, 246, 61, 75}));
   assert(snapshot.add_secondary({"Balcony", true, 198, 52, 245}));
@@ -156,7 +184,12 @@ int main() {
   assert(scene_contains(scene, "Greenhouse"));
   assert(!scene_contains(scene, "Balcony"));
   assert(scene_contains(scene, "Garden"));
+  assert(scene_contains(scene, "18.4°C"));
   assert(scene_contains(scene, "WiFi -58 dBm"));
+  const auto *date = find_text(scene, "Sat, Sep 5, 2026");
+  const auto *network = find_text(scene, "WiFi -58 dBm  ·  192.168.87.44");
+  assert(date != nullptr && date->font == FontRole::MEDIUM);
+  assert(network != nullptr && network->y1 == 221);
   const auto *day_rise = find_text(scene, "Rise 06:42");
   const auto *day_set = find_text(scene, "Set 19:51");
   assert(day_rise != nullptr && day_rise->x1 == 14);
@@ -164,6 +197,11 @@ int main() {
   assert(sun_progress_commands(scene) == 3);
   assert(wifi_icon_commands(scene, ColorRole::ACCENT) == 7);
   assert(wifi_icon_commands(scene, ColorRole::MUTED) == 4);
+
+  snapshot.weather_temperature_valid = false;
+  build_scene(snapshot, options, scene);
+  assert(!scene_contains(scene, "18.4°C"));
+  snapshot.weather_temperature_valid = true;
 
   snapshot.now_ms = 2000;
   snapshot.is_night = true;
@@ -193,9 +231,59 @@ int main() {
   build_scene(snapshot, options, scene);
   assert(sun_progress_commands(scene) == 0);
 
+  ScreenSnapshot worst_case = snapshot;
+  worst_case.time_valid = true;
+  worst_case.hour = 12;
+  worst_case.minute = 59;
+  worst_case.second = 59;
+  worst_case.condition = "partlycloudy";
+  worst_case.weather_temperature_valid = true;
+  worst_case.weather_temperature_tenths_c = -123;
+  worst_case.primary = {
+      "Long primary station name", true, -123, 100, 1324800};
+  worst_case.wifi_valid = true;
+  options.show_sun = true;
+  build_scene(worst_case, options, scene);
+  const auto *clock = find_text(scene, "12:59:59 PM");
+  const auto *condition = find_text(scene, "Partly Cloudy");
+  const auto *weather_temperature = find_text(scene, "-12.3°C");
+  const auto *primary_values = find_text(scene, "-12.3°C  100%");
+  const auto *primary_age = find_text(scene, "15d 8h ago");
+  assert(clock != nullptr && text_right(*clock, scene.text(*clock)) < 206);
+  assert(condition != nullptr && weather_temperature != nullptr);
+  assert(
+      text_right(*condition, scene.text(*condition)) <
+      text_left(*weather_temperature, scene.text(*weather_temperature)));
+  assert(primary_values != nullptr && primary_age != nullptr);
+  assert(primary_age->x1 == 14 && primary_age->y1 > 110);
+  assert(
+      text_right(*primary_age, scene.text(*primary_age)) <
+      text_left(*primary_values, scene.text(*primary_values)));
+
   for (const auto &command : scene) {
     assert(command.x1 >= 0 && command.x1 <= 240);
     assert(command.y1 >= 0 && command.y1 <= 240);
+    if (command.kind == CommandKind::TEXT) {
+      const int height = command.font == FontRole::LARGE
+                             ? 29
+                             : (command.font == FontRole::MEDIUM ? 20 : 14);
+      assert(text_left(command, scene.text(command)) >= 0);
+      assert(text_right(command, scene.text(command)) <= 240);
+      assert(command.y1 + height <= 240);
+    } else if (
+        command.kind == CommandKind::RECTANGLE ||
+        command.kind == CommandKind::FILLED_RECTANGLE) {
+      assert(command.x1 + command.x2 <= 240);
+      assert(command.y1 + command.y2 <= 240);
+    } else if (command.kind == CommandKind::LINE) {
+      assert(command.x2 >= 0 && command.x2 <= 240);
+      assert(command.y2 >= 0 && command.y2 <= 240);
+    } else {
+      assert(command.x1 - command.radius >= 0);
+      assert(command.x1 + command.radius <= 240);
+      assert(command.y1 - command.radius >= 0);
+      assert(command.y1 + command.radius <= 240);
+    }
   }
 
   ScreenSnapshot degraded;
