@@ -195,6 +195,12 @@ void WeatherStationScreen::render(display::Display &display) {
             command.x1, command.y1, command.radius, color);
         break;
     }
+#ifdef USE_ESP8266
+    // A striped framebuffer replays the scene for each strip. Yield between
+    // commands so Wi-Fi/API work and the software watchdog are serviced while
+    // a complete frame is rendered.
+    yield();
+#endif
     return true;
   };
 
