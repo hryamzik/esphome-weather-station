@@ -11,15 +11,14 @@ publishes temperature, humidity, channel, rolling code, and battery-low state
 from an Oregon Scientific THGR122N.
 
 Future CC1101 hardware support is intentionally planned only in this public
-repository. Solight decoding, a polished multi-station display, and CAD are not
-implemented yet.
+repository. Solight decoding, page switching, and CAD are not implemented yet.
 
 ## Use as an external component
 
 ```yaml
 external_components:
   - source: github://hryamzik/esphome-weather-station@main
-    components: [weather_station]
+    components: [weather_station, weather_station_screen]
 
 remote_receiver:
   id: rf_receiver
@@ -61,11 +60,68 @@ weather_station:
 ```
 
 Receiver pins vary between device revisions; verify your board before flashing.
-See `examples/geekmagic-smalltv-ultra.yaml` for a complete component example.
+See `examples/geekmagic-smalltv-ultra.yaml` for the complete display and
+hardware configuration.
+
+## 240×240 single-screen display
+
+The screen uses the routing API directly: the explicit or first-heard primary
+station remains prominent while configured secondaries rotate every two
+seconds. Time comes from ESPHome's Home Assistant time platform, so the device
+does not duplicate timezone configuration. Home Assistant condition, sun
+state, sunrise, and sunset text entity IDs are ordinary configurable YAML
+imports. Sunrise/sunset values may be clock times or preformatted countdowns.
+
+<img src="docs/previews/day.svg" alt="Day display preview" width="240">
+<img src="docs/previews/night.svg" alt="Night display preview" width="240">
+<img src="docs/previews/long-age.svg" alt="Long station age preview" width="240">
+<img src="docs/previews/secondary-cycle-a.svg" alt="First secondary cycle preview" width="240">
+<img src="docs/previews/secondary-cycle-b.svg" alt="Second secondary cycle preview" width="240">
+
+```yaml
+time:
+  - platform: homeassistant
+    id: ha_time
+
+text_sensor:
+  - platform: homeassistant
+    id: current_condition
+    entity_id: weather.home
+  - platform: homeassistant
+    id: next_sunrise
+    entity_id: sensor.next_sunrise_display
+
+weather_station_screen:
+  id: weather_screen
+  weather_station_id: weather_decoder
+  time_id: ha_time
+  fonts: {small: font_small, medium: font_medium, large: font_large}
+  hour_format: 12h # or 24h
+  condition_id: current_condition
+  sunrise_id: next_sunrise
+  sections:
+    time: true
+    date: true
+    condition: true
+    primary: true
+    secondary: true
+    sun: true
+    network: true
+
+display:
+  # ... GeekMagic ST7789V pins; see the complete example
+  lambda: |-
+    id(weather_screen).render(it);
+```
+
+All seven sections can be hidden independently. Icons are original primitive
+vector glyphs drawn by this project; no third-party weather icon set is
+embedded. The example obtains Roboto from Google Fonts under OFL-1.1; see
+`THIRD_PARTY_NOTICES.md`.
 
 ## Routing behavior
 
-- `protocols` is a compile-time allow-list. Milestone 2 accepts only `oregon2`;
+- `protocols` is a compile-time allow-list. The component accepts only `oregon2`;
   unsupported names are configuration errors. Protocol adapters and capability
   flags provide the extension seam for Solight.
 - Every configured station has a stable, separate set of optional entities.
@@ -79,8 +135,8 @@ See `examples/geekmagic-smalltv-ultra.yaml` for a complete component example.
   count reports distinct unknown selectors heard in the configured window.
 - One station may set `primary: true`. Without one, the first configured
   station heard becomes the stable primary fallback. Latest reading and
-  last-seen/age state remain available through the routing domain for a future
-  display; `age` exposes that state as an optional ESPHome sensor.
+  last-seen/age state feed the screen directly; `age` also exposes that state
+  as an optional ESPHome sensor.
 
 ## Migrating from Milestone 1
 
@@ -97,12 +153,16 @@ Python 3.11+ and a C++17 compiler are required.
 ```sh
 make setup
 make test
+make preview
 make esphome-config
 make esphome-compile
 ```
 
 `make test` compiles the production decoder natively and decodes the committed,
-second-receiver-verified Flipper BinRAW capture. See
+second-receiver-verified Flipper BinRAW capture. It also checks display
+formatting and verifies every committed SVG against the production layout
+engine. `make preview` regenerates deterministic screenshots in
+`docs/previews/` without firmware or hardware. See
 `docs/architecture.md` for module boundaries, `docs/supported-protocols.md` for
 support confidence, and `CONTRIBUTING.md` for the fixture ladder required for
 new protocols.

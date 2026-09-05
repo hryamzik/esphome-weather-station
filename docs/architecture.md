@@ -13,6 +13,12 @@ The component has three layers:
    per-station state, chooses the primary, and tracks unknown discovery. It is
    host-testable C++ and exposes immutable station state for a future display.
    `WeatherStationComponent` owns ESPHome sensors and publishes routed results.
+4. `weather_station_screen` reads immutable router state and converts it plus
+   Home Assistant/local diagnostics into a `ScreenSnapshot`.
+   `display_layout.*` turns that snapshot into device-neutral drawing commands.
+   Both the ESPHome renderer and host SVG preview consume the same scene, so
+   preview snapshots exercise production formatting, layout, icon, and
+   secondary-cycling logic.
 
 Routing invariants:
 
@@ -27,5 +33,5 @@ Routing invariants:
   wraparound.
 
 Adding Solight should therefore add a decoder and adapter, extend the
-compile-time protocol dispatcher/schema, and leave station/entity routing
-unchanged.
+compile-time protocol dispatcher/schema, and leave station/entity/display
+routing unchanged.

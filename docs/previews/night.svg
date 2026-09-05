@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 240 240">
+<title>ESPHome Weather Station 240x240 preview</title>
+<style>text{font-family:Roboto,Arial,sans-serif}</style>
+<rect x="0" y="0" width="240" height="240" rx="3" fill="#07111f"/>
+<text x="120" y="5" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">10:14 PM</text>
+<text x="120" y="40" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">Sat, Sep 5, 2026</text>
+<rect x="6" y="59" width="228" height="38" rx="3" fill="#10243a"/>
+<rect x="6" y="59" width="3" height="38" rx="3" fill="#36d1c4"/>
+<circle cx="28" cy="77" r="12" fill="#36d1c4"/>
+<circle cx="34" cy="73" r="11" fill="#10243a"/>
+<text x="51" y="69" fill="#f4f7fb" font-size="16" font-weight="500" text-anchor="start" dominant-baseline="hanging">Clear Night</text>
+<rect x="6" y="102" width="228" height="45" rx="3" fill="#10243a"/>
+<rect x="6" y="102" width="3" height="45" rx="3" fill="#36d1c4"/>
+<text x="14" y="107" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Garden</text>
+<text x="226" y="107" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">18s ago</text>
+<text x="120" y="123" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">21.3°C  47%</text>
+<rect x="6" y="152" width="228" height="25" rx="3" fill="#10243a"/>
+<rect x="6" y="152" width="3" height="25" rx="3" fill="#36d1c4"/>
+<text x="14" y="158" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Balcony</text>
+<text x="226" y="158" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">19.8°C  52% · 4m ago</text>
+<text x="14" y="186" fill="#ffc857" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Rise 06:42</text>
+<text x="226" y="186" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">Set 19:51</text>
+<text x="120" y="207" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">WiFi -58 dBm  ·  192.168.87.44</text>
+</svg>

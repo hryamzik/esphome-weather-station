@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 240 240">
+<title>ESPHome Weather Station 240x240 preview</title>
+<style>text{font-family:Roboto,Arial,sans-serif}</style>
+<rect x="0" y="0" width="240" height="240" rx="3" fill="#07111f"/>
+<text x="120" y="5" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">2:37 PM</text>
+<text x="120" y="40" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">Sat, Sep 5, 2026</text>
+<rect x="6" y="59" width="228" height="38" rx="3" fill="#10243a"/>
+<rect x="6" y="59" width="3" height="38" rx="3" fill="#36d1c4"/>
+<circle cx="22" cy="72" r="7" fill="none" stroke="#ffc857"/>
+<line x1="10" y1="72" x2="16" y2="72" stroke="#ffc857" stroke-width="2"/>
+<line x1="22" y1="60" x2="22" y2="66" stroke="#ffc857" stroke-width="2"/>
+<line x1="34" y1="72" x2="28" y2="72" stroke="#ffc857" stroke-width="2"/>
+<line x1="22" y1="84" x2="22" y2="78" stroke="#ffc857" stroke-width="2"/>
+<line x1="13" y1="63" x2="17" y2="67" stroke="#ffc857" stroke-width="2"/>
+<line x1="31" y1="63" x2="27" y2="67" stroke="#ffc857" stroke-width="2"/>
+<line x1="13" y1="81" x2="17" y2="77" stroke="#ffc857" stroke-width="2"/>
+<line x1="31" y1="81" x2="27" y2="77" stroke="#ffc857" stroke-width="2"/>
+<circle cx="24" cy="80" r="6" fill="#c4d3df"/>
+<circle cx="32" cy="75" r="9" fill="#c4d3df"/>
+<circle cx="41" cy="80" r="6" fill="#c4d3df"/>
+<rect x="18" y="80" width="29" height="8" rx="3" fill="#c4d3df"/>
+<text x="51" y="69" fill="#f4f7fb" font-size="16" font-weight="500" text-anchor="start" dominant-baseline="hanging">Partly Cloudy</text>
+<rect x="6" y="102" width="228" height="45" rx="3" fill="#10243a"/>
+<rect x="6" y="102" width="3" height="45" rx="3" fill="#36d1c4"/>
+<text x="14" y="107" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Garden</text>
+<text x="226" y="107" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">18s ago</text>
+<text x="120" y="123" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">21.3°C  47%</text>
+<rect x="6" y="152" width="228" height="25" rx="3" fill="#10243a"/>
+<rect x="6" y="152" width="3" height="25" rx="3" fill="#36d1c4"/>
+<text x="14" y="158" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Greenhouse</text>
+<text x="226" y="158" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">24.6°C  61% · 1m ago</text>
+<text x="14" y="186" fill="#ffc857" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Rise 06:42</text>
+<text x="226" y="186" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">Set 19:51</text>
+<text x="120" y="207" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">WiFi -58 dBm  ·  192.168.87.44</text>
+</svg>

@@ -7,7 +7,7 @@ ESPHOME := $(PYTHON) -m esphome
 CONFIG := tests/esphome/geekmagic-smalltv-ultra.yaml
 STAMP := $(VENV)/.installed
 
-.PHONY: setup test native-test esphome-config esphome-compile clean
+.PHONY: setup test native-test preview esphome-config esphome-compile clean
 
 setup: $(STAMP)
 
@@ -21,6 +21,9 @@ test: $(STAMP)
 	$(PYTHON) -m pytest
 
 native-test: test
+
+preview:
+	python3 tools/render_previews.py
 
 esphome-config: $(STAMP)
 	$(ESPHOME) config $(CONFIG)

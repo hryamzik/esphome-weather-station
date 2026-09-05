@@ -46,3 +46,16 @@ useful for edge cases but cannot raise protocol confidence by themselves.
 
 Run `make test`, `make esphome-config`, and, when toolchain downloads are
 available, `make esphome-compile` before opening a pull request.
+
+## Display changes
+
+Keep formatting and geometry in the ESPHome-independent
+`weather_station_screen/display_layout.*` scene builder. The firmware renderer
+and `tools/preview_renderer.cpp` must consume those same commands; do not create
+a separate mock layout for screenshots.
+
+Run `make preview`, review every SVG in `docs/previews/`, then run `make test`.
+Tests require committed previews to match the deterministic production layout.
+Weather glyphs should be original primitives where practical. Document the
+source, copyright, and license of any imported font, icon, or image in
+`THIRD_PARTY_NOTICES.md`.

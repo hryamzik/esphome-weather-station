@@ -1,8 +1,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+esphome:
+  name: geekmagic-weather-station
+
+esp8266:
+  board: esp01_1m
+
 external_components:
   - source: github://hryamzik/esphome-weather-station@main
-    components: [weather_station]
+    components: [weather_station, weather_station_screen]
+
+logger:
+  baud_rate: 0
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
 
 remote_receiver:
   id: rf_receiver
@@ -50,13 +65,112 @@ weather_station:
         name: Greenhouse Temperature
       humidity:
         name: Greenhouse Humidity
+    - id: balcony
+      name: Balcony
+      selector:
+        protocol: oregon2
+        model: 0x1D20
+        channel: 3
+        rolling_code: 0x77
+      temperature:
+        name: Balcony Temperature
+      humidity:
+        name: Balcony Humidity
   ignore:
     - protocol: oregon2
       model: 0x1D20
-      channel: 3
+      channel: 2
+      rolling_code: 0x99
   diagnostics:
     last_unknown_selector:
       name: Last Unknown Weather Station
     recent_unknown_count:
       name: Recent Unknown Weather Stations
     unknown_window: 5min
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+text_sensor:
+  - platform: homeassistant
+    id: current_condition
+    entity_id: weather.home
+  - platform: homeassistant
+    id: sun_state
+    entity_id: sun.sun
+  - platform: homeassistant
+    id: next_sunrise
+    entity_id: sensor.next_sunrise_display
+  - platform: homeassistant
+    id: next_sunset
+    entity_id: sensor.next_sunset_display
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip
+
+sensor:
+  - platform: wifi_signal
+    id: wifi_rssi
+    update_interval: 30s
+
+spi:
+  id: display_spi
+  clk_pin: GPIO14
+  mosi_pin: GPIO13
+  interface: hardware
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 11
+    glyphs: &weather_glyphs
+      - " !\"%&'()+,-./:0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz°·"
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 16
+    glyphs: *weather_glyphs
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 24
+    glyphs: *weather_glyphs
+
+weather_station_screen:
+  id: weather_screen
+  weather_station_id: weather_decoder
+  time_id: ha_time
+  fonts:
+    small: font_small
+    medium: font_medium
+    large: font_large
+  hour_format: 12h
+  condition_id: current_condition
+  sun_state_id: sun_state
+  sunrise_id: next_sunrise
+  sunset_id: next_sunset
+  wifi_signal_id: wifi_rssi
+  ip_address_id: wifi_ip
+  sections:
+    time: true
+    date: true
+    condition: true
+    primary: true
+    secondary: true
+    sun: true
+    network: true
+
+display:
+  - platform: mipi_spi
+    model: st7789v
+    spi_id: display_spi
+    dimensions:
+      width: 240
+      height: 240
+    invert_colors: true
+    dc_pin: GPIO0
+    reset_pin: GPIO2
+    color_depth: 8
+    spi_mode: mode3
+    update_interval: 1s
+    lambda: |-
+      id(weather_screen).render(it);
