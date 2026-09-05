@@ -90,6 +90,7 @@ enum class FontRole : uint8_t {
   SMALL,
   MEDIUM,
   LARGE,
+  LARGE_REGULAR,
 };
 
 enum class TextAlign : uint8_t {
@@ -123,7 +124,6 @@ struct ScreenSnapshot {
   bool time_valid{false};
   uint8_t hour{0};
   uint8_t minute{0};
-  uint8_t second{0};
   uint16_t year{0};
   uint8_t month{0};
   uint8_t day{0};
@@ -158,7 +158,8 @@ struct ScreenSnapshot {
 
 struct LayoutOptions {
   bool use_24_hour{false};
-  bool show_seconds{true};
+  bool show_am_pm{false};
+  uint32_t stale_after_seconds{300};
   bool show_time{true};
   bool show_date{true};
   bool show_condition{true};
@@ -221,9 +222,8 @@ class Scene {
 void format_time(
     uint8_t hour,
     uint8_t minute,
-    uint8_t second,
     bool use_24_hour,
-    bool show_seconds,
+    bool show_am_pm,
     char *output,
     size_t output_size);
 void format_date(
@@ -234,6 +234,12 @@ void format_date(
     char *output,
     size_t output_size);
 void format_age(uint32_t age_seconds, bool heard, char *output, size_t output_size);
+void format_phase_remaining(
+    uint8_t hour,
+    uint8_t minute,
+    const char *target_time,
+    char *output,
+    size_t output_size);
 void format_station_values(
     const StationView &station, char *output, size_t output_size);
 void humanize_condition(const char *condition, char *output, size_t output_size);

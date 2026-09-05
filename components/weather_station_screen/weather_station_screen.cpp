@@ -24,7 +24,6 @@ void WeatherStationScreen::snapshot_(
     if (snapshot.time_valid) {
       snapshot.hour = now.hour;
       snapshot.minute = now.minute;
-      snapshot.second = now.second;
       snapshot.year = now.year;
       snapshot.month = now.month;
       snapshot.day = now.day_of_month;
@@ -172,7 +171,9 @@ void WeatherStationScreen::render(display::Display &display) {
         font::Font *font = render.screen->small_font_;
         if (command.font == FontRole::MEDIUM) {
           font = render.screen->medium_font_;
-        } else if (command.font == FontRole::LARGE) {
+        } else if (
+            command.font == FontRole::LARGE ||
+            command.font == FontRole::LARGE_REGULAR) {
           font = render.screen->large_font_;
         }
         display::TextAlign align = display::TextAlign::TOP_LEFT;

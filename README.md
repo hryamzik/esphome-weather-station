@@ -75,13 +75,16 @@ station remains prominent while configured secondaries rotate every two
 seconds. Time comes from ESPHome's Home Assistant time platform, so the device
 does not duplicate timezone configuration. Home Assistant condition, sun
 state, sunrise, and sunset text entity IDs are ordinary configurable YAML
-imports. Sunrise/sunset values may be clock times or preformatted countdowns.
+imports. Sunrise/sunset values must use local `HH:MM` clock times.
 During daytime the sun row reads Rise → Set; at night it reads Set → Rise. An
 optional HA numeric sensor supplies 0–100% progress for the compact bar between
 them, keeping timezone and astronomy calculations out of the device.
 The condition card can also show an optional Home Assistant weather
-temperature supplied in Celsius. The clock includes seconds by default and
-remains configurable for 12- or 24-hour output.
+temperature supplied in Celsius. It uses the same large configured Roboto font
+as the primary values, with regular weight in deterministic SVG previews. The
+clock shows hours and minutes in
+configurable 12- or 24-hour output. An optional meridiem label can be enabled
+for 12-hour output; 24-hour output never displays one.
 
 <img src="docs/previews/startup.svg" alt="Wi-Fi association startup view" width="240">
 <img src="docs/previews/day.svg" alt="Day display preview" width="240">
@@ -119,7 +122,8 @@ weather_station_screen:
   time_id: ha_time
   fonts: {small: font_small, medium: font_medium, large: font_large}
   hour_format: 12h # or 24h
-  show_seconds: true
+  show_am_pm: false
+  stale_after: 5min
   condition_id: current_condition
   weather_temperature_id: current_weather_temperature
   sunrise_id: next_sunrise
@@ -140,20 +144,25 @@ display:
 ```
 
 All seven sections can be hidden independently. The network section controls
-both the detailed bottom RSSI/IP row and the traditional top-right Wi-Fi icon.
+both the bottom IP/phase-remaining row and the traditional top-right Wi-Fi icon.
 The icon has distinct weak/fair/good levels and an explicit crossed-out state
 when RSSI is unavailable; its full-glyph diagonal cross remains visible at
-240×240. The sun progress bar disappears cleanly when `sun_progress_id` has no
-state or is omitted. Icons are original primitive vector glyphs drawn by this
+240×240. The bottom row shows the IP address at x=14 and the current phase time
+remaining at x=226: sunset during the day and sunrise at night. Remaining time
+is derived from Home Assistant local time with midnight wrap; unavailable or
+malformed clock values render `Left --:--`. The sun progress bar disappears
+cleanly when `sun_progress_id` has no state or is omitted. Icons are original primitive vector glyphs drawn by this
 project; no third-party weather icon set is embedded. The example obtains
 Roboto from Google Fonts under OFL-1.1; see `THIRD_PARTY_NOTICES.md`.
 
-The full layout reaches the bottom diagnostics baseline at y=221 while
+The full layout reaches the bottom status baseline at y=221 while
 retaining a safe margin. The medium date and 41 px condition card lead into a
 50 px primary card: station name and age share the left column, while the
-large temperature/humidity value uses the right side. The worst-case
-`12:59:59 PM` clock is shifted left when the network icon is visible so their
-bounds do not overlap.
+large temperature/humidity value uses the right side. A heard station becomes
+stale only after its age exceeds `stale_after` (five minutes by default), so
+5:00 remains fresh and 5:01 is stale. Stale values use the muted gray while the
+unchanged human-readable age turns red. The worst-case `12:59 PM` clock is
+shifted left when the network icon is visible so their bounds do not overlap.
 
 ### ESP8266 memory budget
 
@@ -180,8 +189,9 @@ builds and requires zero allocations after setup. Home Assistant condition and
 sun values remain optional: missing HA/time/network state renders explicit
 fallbacks while local RF station values continue to display.
 
-The ESPHome wrapper reads RSSI and IP directly from the configured Wi-Fi
-component, avoiding dedicated `wifi_signal` and `wifi_info` entities. Existing
+The ESPHome wrapper reads RSSI for the icon and IP for the bottom row directly
+from the configured Wi-Fi component, avoiding dedicated `wifi_signal` and
+`wifi_info` entities. Existing
 `wifi_signal_id` and `ip_address_id` settings remain supported as explicit
 overrides. This dependency stays in the thin ESPHome wrapper; snapshots and the
 host-testable layout remain platform-independent.

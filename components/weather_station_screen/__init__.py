@@ -15,7 +15,7 @@ CONF_IP_ADDRESS_ID = "ip_address_id"
 CONF_LARGE = "large"
 CONF_MEDIUM = "medium"
 CONF_SECTIONS = "sections"
-CONF_SHOW_SECONDS = "show_seconds"
+CONF_SHOW_AM_PM = "show_am_pm"
 CONF_SHOW_CONDITION = "condition"
 CONF_SHOW_DATE = "date"
 CONF_SHOW_NETWORK = "network"
@@ -24,6 +24,7 @@ CONF_SHOW_SECONDARY = "secondary"
 CONF_SHOW_SUN = "sun"
 CONF_SHOW_TIME = "time"
 CONF_SMALL = "small"
+CONF_STALE_AFTER = "stale_after"
 CONF_SUN_PROGRESS_ID = "sun_progress_id"
 CONF_SUN_STATE_ID = "sun_state_id"
 CONF_SUNRISE_ID = "sunrise_id"
@@ -35,6 +36,17 @@ CONF_WIFI_SIGNAL_ID = "wifi_signal_id"
 
 weather_station_screen_ns = cg.esphome_ns.namespace("weather_station_screen")
 WeatherStationScreen = weather_station_screen_ns.class_("WeatherStationScreen")
+
+
+def _positive_time_period_seconds(value):
+    period = cv.positive_time_period_milliseconds(value)
+    seconds = (period.total_milliseconds + 999) // 1000
+    if seconds == 0:
+        raise cv.Invalid("time period must be greater than zero")
+    if seconds > 0xFFFFFFFF:
+        raise cv.Invalid("time period is too large to store as seconds")
+    return seconds
+
 
 FONT_SCHEMA = cv.Schema(
     {
@@ -67,7 +79,10 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_HOUR_FORMAT, default="12h"): cv.one_of(
             "12h", "24h", lower=True
         ),
-        cv.Optional(CONF_SHOW_SECONDS, default=True): cv.boolean,
+        cv.Optional(CONF_SHOW_AM_PM, default=False): cv.boolean,
+        cv.Optional(
+            CONF_STALE_AFTER, default="5min"
+        ): _positive_time_period_seconds,
         cv.Optional(CONF_CONDITION_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_WEATHER_TEMPERATURE_ID): cv.use_id(sensor.Sensor),
         cv.Optional(CONF_SUN_STATE_ID): cv.use_id(text_sensor.TextSensor),
@@ -94,7 +109,8 @@ async def to_code(config):
     cg.add(var.set_time(clock))
     cg.add(var.set_fonts(small, medium, large))
     cg.add(var.set_use_24_hour(config[CONF_HOUR_FORMAT] == "24h"))
-    cg.add(var.set_show_seconds(config[CONF_SHOW_SECONDS]))
+    cg.add(var.set_show_am_pm(config[CONF_SHOW_AM_PM]))
+    cg.add(var.set_stale_after_seconds(config[CONF_STALE_AFTER]))
 
     optional_setters = (
         (CONF_CONDITION_ID, var.set_condition),

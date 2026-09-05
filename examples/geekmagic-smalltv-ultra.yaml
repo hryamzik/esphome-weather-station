@@ -146,7 +146,8 @@ weather_station_screen:
     medium: font_medium
     large: font_large
   hour_format: 12h
-  show_seconds: true
+  show_am_pm: false
+  stale_after: 5min
   condition_id: current_condition
   weather_temperature_id: current_weather_temperature
   sun_state_id: sun_state

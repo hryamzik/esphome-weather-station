@@ -19,7 +19,7 @@
 <line x1="233" y1="7" x2="207" y2="33" stroke="#ff6b6b" stroke-width="2"/>
 <line x1="234" y1="8" x2="208" y2="34" stroke="#ff6b6b" stroke-width="2"/>
 <line x1="232" y1="6" x2="206" y2="32" stroke="#ff6b6b" stroke-width="2"/>
-<text x="108" y="4" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">2:37:09 PM</text>
+<text x="120" y="4" fill="#f4f7fb" font-size="24" font-weight="700" text-anchor="middle" dominant-baseline="hanging">2:37</text>
 <text x="120" y="40" fill="#8ca5bc" font-size="16" font-weight="500" text-anchor="middle" dominant-baseline="hanging">Sat, Sep 5, 2026</text>
 <rect x="6" y="63" width="228" height="41" rx="3" fill="#10243a"/>
 <rect x="6" y="63" width="3" height="41" rx="3" fill="#36d1c4"/>
@@ -37,7 +37,7 @@
 <circle cx="41" cy="86" r="6" fill="#c4d3df"/>
 <rect x="18" y="86" width="29" height="8" rx="3" fill="#c4d3df"/>
 <text x="51" y="74" fill="#f4f7fb" font-size="16" font-weight="500" text-anchor="start" dominant-baseline="hanging">Partly Cloudy</text>
-<text x="226" y="74" fill="#36d1c4" font-size="16" font-weight="500" text-anchor="end" dominant-baseline="hanging">18.4°C</text>
+<text x="234" y="70" fill="#36d1c4" font-size="24" font-weight="500" text-anchor="end" dominant-baseline="hanging">18.4°C</text>
 <rect x="6" y="109" width="228" height="50" rx="3" fill="#10243a"/>
 <rect x="6" y="109" width="3" height="50" rx="3" fill="#36d1c4"/>
 <text x="14" y="116" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Garden</text>
@@ -46,11 +46,13 @@
 <rect x="6" y="164" width="228" height="27" rx="3" fill="#10243a"/>
 <rect x="6" y="164" width="3" height="27" rx="3" fill="#36d1c4"/>
 <text x="14" y="171" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Greenhouse</text>
-<text x="226" y="171" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">24.6°C  61% · 1m ago</text>
+<text x="154" y="171" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">24.6°C  61% ·</text>
+<text x="226" y="171" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">1m ago</text>
 <text x="14" y="200" fill="#ffc857" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Rise 06:42</text>
 <text x="226" y="200" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">Set 19:51</text>
 <rect x="79" y="205" width="82" height="5" rx="3" fill="none" stroke="#8ca5bc"/>
 <rect x="80" y="206" width="33" height="3" rx="3" fill="#ffc857"/>
 <circle cx="113" cy="207" r="2" fill="#f4f7fb"/>
-<text x="120" y="221" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">WiFi -- dBm  ·  no IP</text>
+<text x="14" y="221" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">IP unavailable</text>
+<text x="226" y="221" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">Left 05:14</text>
 </svg>

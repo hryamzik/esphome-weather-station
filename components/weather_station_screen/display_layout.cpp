@@ -109,6 +109,11 @@ bool contains(const char *value, const char *needle) {
   return std::strstr(value, needle) != nullptr;
 }
 
+bool is_stale(const StationView &station, const LayoutOptions &options) {
+  return station.heard &&
+         station.age_seconds > options.stale_after_seconds;
+}
+
 void ellipsize(
     const char *value, size_t limit, char *output, size_t output_size) {
   if (output_size == 0U) {
@@ -219,27 +224,20 @@ void draw_wifi_icon(
 void format_time(
     uint8_t hour,
     uint8_t minute,
-    uint8_t second,
     bool use_24_hour,
-    bool show_seconds,
+    bool show_am_pm,
     char *output,
     size_t output_size) {
   if (use_24_hour) {
-    if (show_seconds) {
-      std::snprintf(output, output_size, "%02u:%02u:%02u", hour, minute, second);
-    } else {
-      std::snprintf(output, output_size, "%02u:%02u", hour, minute);
-    }
+    std::snprintf(output, output_size, "%02u:%02u", hour, minute);
   } else {
     const uint8_t display_hour = hour % 12U == 0U ? 12U : hour % 12U;
-    if (show_seconds) {
-      std::snprintf(
-          output, output_size, "%u:%02u:%02u %s", display_hour, minute, second,
-          hour < 12U ? "AM" : "PM");
-    } else {
+    if (show_am_pm) {
       std::snprintf(
           output, output_size, "%u:%02u %s", display_hour, minute,
           hour < 12U ? "AM" : "PM");
+    } else {
+      std::snprintf(output, output_size, "%u:%02u", display_hour, minute);
     }
   }
 }
@@ -278,6 +276,47 @@ void format_age(
         output, output_size, "%ud %uh ago", age_seconds / 86400U,
         (age_seconds % 86400U) / 3600U);
   }
+}
+
+void format_phase_remaining(
+    uint8_t hour,
+    uint8_t minute,
+    const char *target_time,
+    char *output,
+    size_t output_size) {
+  unsigned target_hour = 0;
+  unsigned target_minute = 0;
+  const bool valid_shape =
+      target_time != nullptr && std::strlen(target_time) == 5U &&
+      std::isdigit(static_cast<unsigned char>(target_time[0])) &&
+      std::isdigit(static_cast<unsigned char>(target_time[1])) &&
+      target_time[2] == ':' &&
+      std::isdigit(static_cast<unsigned char>(target_time[3])) &&
+      std::isdigit(static_cast<unsigned char>(target_time[4]));
+  if (valid_shape) {
+    target_hour =
+        static_cast<unsigned>(target_time[0] - '0') * 10U +
+        static_cast<unsigned>(target_time[1] - '0');
+    target_minute =
+        static_cast<unsigned>(target_time[3] - '0') * 10U +
+        static_cast<unsigned>(target_time[4] - '0');
+  }
+  const bool valid =
+      hour <= 23U && minute <= 59U && valid_shape &&
+      target_hour <= 23U && target_minute <= 59U;
+  if (!valid) {
+    std::snprintf(output, output_size, "Left --:--");
+    return;
+  }
+
+  const unsigned current_minutes =
+      static_cast<unsigned>(hour) * 60U + minute;
+  const unsigned target_minutes = target_hour * 60U + target_minute;
+  const unsigned remaining =
+      (target_minutes + 24U * 60U - current_minutes) % (24U * 60U);
+  std::snprintf(
+      output, output_size, "Left %02u:%02u", remaining / 60U,
+      remaining % 60U);
 }
 
 void format_station_values(
@@ -379,14 +418,13 @@ void build_scene_impl(
   if (options.show_time) {
     if (snapshot.time_valid) {
       format_time(
-          snapshot.hour, snapshot.minute, snapshot.second, options.use_24_hour,
-          options.show_seconds, text, sizeof(text));
+          snapshot.hour, snapshot.minute, options.use_24_hour,
+          options.show_am_pm, text, sizeof(text));
     } else {
-      std::snprintf(
-          text, sizeof(text), options.show_seconds ? "--:--:--" : "--:--");
+      std::snprintf(text, sizeof(text), "--:--");
     }
     add_text(
-        scene, options.show_network ? 108 : 120, y, FontRole::LARGE,
+        scene, 120, y, FontRole::LARGE,
         ColorRole::TEXT, TextAlign::CENTER, text);
     y += 36;
   }
@@ -422,12 +460,13 @@ void build_scene_impl(
           text, sizeof(text), "%s%d.%d°C", temperature < 0 ? "-" : "",
           static_cast<int>(absolute / 10), static_cast<int>(absolute % 10));
       add_text(
-          scene, 226, y + 11, FontRole::MEDIUM, ColorRole::ACCENT,
+          scene, 234, y + 7, FontRole::LARGE_REGULAR, ColorRole::ACCENT,
           TextAlign::RIGHT, text);
     }
     y += 46;
   }
   if (options.show_primary) {
+    const bool stale = is_stale(snapshot.primary, options);
     add_card(scene, y, 50);
     char name[24];
     ellipsize(
@@ -440,18 +479,19 @@ void build_scene_impl(
     format_age(
         snapshot.primary.age_seconds, snapshot.primary.heard, text, sizeof(text));
     add_text(
-        scene, 14, y + 27, FontRole::SMALL, ColorRole::MUTED, TextAlign::LEFT,
-        text);
+        scene, 14, y + 27, FontRole::SMALL,
+        stale ? ColorRole::WARNING : ColorRole::MUTED, TextAlign::LEFT, text);
     format_station_values(snapshot.primary, text, sizeof(text));
     add_text(
-        scene, 228, y + 13, FontRole::LARGE, ColorRole::TEXT, TextAlign::RIGHT,
-        text);
+        scene, 228, y + 13, FontRole::LARGE,
+        stale ? ColorRole::MUTED : ColorRole::TEXT, TextAlign::RIGHT, text);
     y += 55;
   }
   if (options.show_secondary && snapshot.secondary_count != 0U) {
     const auto &secondary =
         snapshot.secondaries[selected_secondary_index(
             snapshot.secondary_count, snapshot.now_ms)];
+    const bool stale = is_stale(secondary, options);
     add_card(scene, y, 27);
     char name[24];
     ellipsize(secondary.name.c_str(), 10, name, sizeof(name));
@@ -462,10 +502,13 @@ void build_scene_impl(
     char age[32];
     format_station_values(secondary, values, sizeof(values));
     format_age(secondary.age_seconds, secondary.heard, age, sizeof(age));
-    std::snprintf(text, sizeof(text), "%s · %s", values, age);
+    std::snprintf(text, sizeof(text), "%s ·", values);
     add_text(
-        scene, 226, y + 7, FontRole::SMALL, ColorRole::TEXT, TextAlign::RIGHT,
-        text);
+        scene, 154, y + 7, FontRole::SMALL,
+        stale ? ColorRole::MUTED : ColorRole::TEXT, TextAlign::RIGHT, text);
+    add_text(
+        scene, 226, y + 7, FontRole::SMALL,
+        stale ? ColorRole::WARNING : ColorRole::TEXT, TextAlign::RIGHT, age);
     y += 32;
   }
   if (options.show_sun) {
@@ -509,19 +552,27 @@ void build_scene_impl(
     y += 22;
   }
   if (options.show_network) {
-    if (snapshot.wifi_valid) {
-      std::snprintf(
-          text, sizeof(text), "WiFi %d dBm  ·  %s", snapshot.wifi_dbm,
-          snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
-    } else {
-      std::snprintf(
-          text, sizeof(text), "WiFi -- dBm  ·  %s",
-          snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
-    }
     const int network_y = y + 3 < 224 ? y + 3 : 224;
+    char ip_address[32];
+    if (snapshot.ip_address.empty()) {
+      std::snprintf(ip_address, sizeof(ip_address), "IP unavailable");
+    } else {
+      ellipsize(
+          snapshot.ip_address.c_str(), 28U, ip_address, sizeof(ip_address));
+    }
     add_text(
-        scene, 120, network_y, FontRole::SMALL, ColorRole::MUTED,
-        TextAlign::CENTER, text);
+        scene, 14, network_y, FontRole::SMALL, ColorRole::MUTED,
+        TextAlign::LEFT, ip_address);
+
+    const char *target_time =
+        snapshot.is_night ? snapshot.sunrise.c_str() : snapshot.sunset.c_str();
+    format_phase_remaining(
+        snapshot.hour, snapshot.minute,
+        snapshot.time_valid ? target_time : nullptr, text, sizeof(text));
+    add_text(
+        scene, 226, network_y, FontRole::SMALL,
+        snapshot.is_night ? ColorRole::SUN : ColorRole::ACCENT,
+        TextAlign::RIGHT, text);
   }
 }
 

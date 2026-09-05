@@ -33,7 +33,6 @@ ScreenSnapshot base_snapshot() {
   snapshot.time_valid = true;
   snapshot.hour = 14;
   snapshot.minute = 37;
-  snapshot.second = 9;
   snapshot.year = 2026;
   snapshot.month = 9;
   snapshot.day = 5;
@@ -61,7 +60,6 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
     snapshot.condition = "sunny";
     snapshot.hour = 10;
     snapshot.minute = 8;
-    snapshot.second = 42;
     snapshot.now_ms = 0;
     snapshot.sun_progress_percent = 31;
   } else if (name == "night") {
@@ -69,7 +67,6 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
     snapshot.is_night = true;
     snapshot.hour = 22;
     snapshot.minute = 14;
-    snapshot.second = 57;
     snapshot.now_ms = 2000;
     snapshot.sun_progress_percent = 64;
   } else if (name == "long-age") {
@@ -108,7 +105,10 @@ void write_svg(const Scene &scene, const std::string &path) {
     const char *color = color_hex(command.color);
     switch (command.kind) {
       case CommandKind::TEXT: {
-        const int size = command.font == FontRole::LARGE
+        const bool large =
+            command.font == FontRole::LARGE ||
+            command.font == FontRole::LARGE_REGULAR;
+        const int size = large
                              ? 24
                              : (command.font == FontRole::MEDIUM ? 16 : 11);
         const char *anchor = command.align == TextAlign::CENTER

@@ -53,3 +53,21 @@ def test_committed_previews_match_production_layout(tmp_path):
         assert rendered.read_text(encoding="utf-8") == committed.read_text(
             encoding="utf-8"
         )
+
+        if scenario == "day":
+            svg = rendered.read_text(encoding="utf-8")
+            weather_temperature = next(
+                line for line in svg.splitlines() if ">18.4°C</text>" in line
+            )
+            clock = next(
+                line for line in svg.splitlines() if ">10:08</text>" in line
+            )
+            primary_values = next(
+                line
+                for line in svg.splitlines()
+                if ">21.3°C  47%</text>" in line
+            )
+            assert 'font-size="24"' in weather_temperature
+            assert 'font-weight="500"' in weather_temperature
+            assert 'font-weight="700"' in clock
+            assert 'font-weight="700"' in primary_values

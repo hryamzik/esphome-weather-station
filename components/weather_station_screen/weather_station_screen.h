@@ -37,7 +37,10 @@ class WeatherStationScreen {
   void set_ip_address(text_sensor::TextSensor *sensor) { this->ip_address_ = sensor; }
 
   void set_use_24_hour(bool value) { this->options_.use_24_hour = value; }
-  void set_show_seconds(bool value) { this->options_.show_seconds = value; }
+  void set_show_am_pm(bool value) { this->options_.show_am_pm = value; }
+  void set_stale_after_seconds(uint32_t value) {
+    this->options_.stale_after_seconds = value;
+  }
   void set_show_time(bool value) { this->options_.show_time = value; }
   void set_show_date(bool value) { this->options_.show_date = value; }
   void set_show_condition(bool value) { this->options_.show_condition = value; }
