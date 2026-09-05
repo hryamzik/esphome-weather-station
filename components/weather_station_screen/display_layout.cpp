@@ -2,9 +2,9 @@
 
 #include "display_layout.h"
 
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstring>
 
 namespace weather_station_display {
 namespace {
@@ -14,64 +14,116 @@ const char *const MONTHS[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
+struct CommandStream {
+  DrawCommandCallback callback;
+  void *context;
+
+  bool push(const DrawCommand &command) {
+    return this->callback(this->context, command, nullptr);
+  }
+  bool push_text(const DrawCommand &command, const char *text) {
+    return this->callback(this->context, command, text);
+  }
+};
+
 void add_text(
-    Scene &scene,
+    CommandStream &scene,
     int x,
     int y,
     FontRole font,
     ColorRole color,
     TextAlign align,
-    const std::string &text) {
-  scene.push_back(
-      {CommandKind::TEXT, static_cast<int16_t>(x), static_cast<int16_t>(y), 0, 0,
-       0, color, font, align, text});
+    const char *text) {
+  DrawCommand command;
+  command.kind = CommandKind::TEXT;
+  command.x1 = static_cast<int16_t>(x);
+  command.y1 = static_cast<int16_t>(y);
+  command.color = color;
+  command.font = font;
+  command.align = align;
+  scene.push_text(command, text);
 }
 
 void add_line(
-    Scene &scene, int x1, int y1, int x2, int y2, ColorRole color) {
-  scene.push_back(
-      {CommandKind::LINE, static_cast<int16_t>(x1), static_cast<int16_t>(y1),
-       static_cast<int16_t>(x2), static_cast<int16_t>(y2), 0, color,
-       FontRole::SMALL, TextAlign::LEFT, ""});
+    CommandStream &scene, int x1, int y1, int x2, int y2, ColorRole color) {
+  DrawCommand command;
+  command.kind = CommandKind::LINE;
+  command.x1 = static_cast<int16_t>(x1);
+  command.y1 = static_cast<int16_t>(y1);
+  command.x2 = static_cast<int16_t>(x2);
+  command.y2 = static_cast<int16_t>(y2);
+  command.color = color;
+  scene.push(command);
 }
 
 void add_rect(
-    Scene &scene, int x, int y, int width, int height, ColorRole color, bool filled) {
-  scene.push_back(
-      {filled ? CommandKind::FILLED_RECTANGLE : CommandKind::RECTANGLE,
-       static_cast<int16_t>(x), static_cast<int16_t>(y),
-       static_cast<int16_t>(width), static_cast<int16_t>(height), 0, color,
-       FontRole::SMALL, TextAlign::LEFT, ""});
+    CommandStream &scene,
+    int x,
+    int y,
+    int width,
+    int height,
+    ColorRole color,
+    bool filled) {
+  DrawCommand command;
+  command.kind =
+      filled ? CommandKind::FILLED_RECTANGLE : CommandKind::RECTANGLE;
+  command.x1 = static_cast<int16_t>(x);
+  command.y1 = static_cast<int16_t>(y);
+  command.x2 = static_cast<int16_t>(width);
+  command.y2 = static_cast<int16_t>(height);
+  command.color = color;
+  scene.push(command);
 }
 
 void add_circle(
-    Scene &scene, int x, int y, int radius, ColorRole color, bool filled) {
-  scene.push_back(
-      {filled ? CommandKind::FILLED_CIRCLE : CommandKind::CIRCLE,
-       static_cast<int16_t>(x), static_cast<int16_t>(y), 0, 0,
-       static_cast<int16_t>(radius), color, FontRole::SMALL, TextAlign::LEFT, ""});
+    CommandStream &scene,
+    int x,
+    int y,
+    int radius,
+    ColorRole color,
+    bool filled) {
+  DrawCommand command;
+  command.kind = filled ? CommandKind::FILLED_CIRCLE : CommandKind::CIRCLE;
+  command.x1 = static_cast<int16_t>(x);
+  command.y1 = static_cast<int16_t>(y);
+  command.radius = static_cast<int16_t>(radius);
+  command.color = color;
+  scene.push(command);
 }
 
-std::string normalized(std::string value) {
-  std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
-    return static_cast<char>(std::tolower(c));
-  });
-  std::replace(value.begin(), value.end(), '_', '-');
-  return value;
-}
-
-bool contains(const std::string &value, const char *needle) {
-  return value.find(needle) != std::string::npos;
-}
-
-std::string ellipsize(const std::string &value, size_t limit) {
-  if (value.size() <= limit) {
-    return value;
+void normalize(const char *input, char *output, size_t output_size) {
+  if (output_size == 0U) {
+    return;
   }
-  return value.substr(0, limit - 3U) + "...";
+  size_t index = 0;
+  while (input != nullptr && input[index] != '\0' && index + 1U < output_size) {
+    const unsigned char character = static_cast<unsigned char>(input[index]);
+    output[index] =
+        character == '_' ? '-' : static_cast<char>(std::tolower(character));
+    index++;
+  }
+  output[index] = '\0';
 }
 
-void draw_sun(Scene &scene, int x, int y) {
+bool contains(const char *value, const char *needle) {
+  return std::strstr(value, needle) != nullptr;
+}
+
+void ellipsize(
+    const char *value, size_t limit, char *output, size_t output_size) {
+  if (output_size == 0U) {
+    return;
+  }
+  const size_t length = std::strlen(value);
+  if (length <= limit) {
+    std::snprintf(output, output_size, "%s", value);
+    return;
+  }
+  const size_t prefix = limit > 3U ? limit - 3U : 0U;
+  std::snprintf(output, output_size, "%.*s...", static_cast<int>(prefix), value);
+}
+
+void draw_sun(CommandStream &scene, int x, int y) {
   add_circle(scene, x, y, 7, ColorRole::SUN, false);
   for (int offset = -12; offset <= 12; offset += 24) {
     add_line(scene, x + offset, y, x + offset / 2, y, ColorRole::SUN);
@@ -83,7 +135,7 @@ void draw_sun(Scene &scene, int x, int y) {
   add_line(scene, x + 9, y + 9, x + 5, y + 5, ColorRole::SUN);
 }
 
-void draw_cloud(Scene &scene, int x, int y) {
+void draw_cloud(CommandStream &scene, int x, int y) {
   add_circle(scene, x - 7, y, 6, ColorRole::CLOUD, true);
   add_circle(scene, x + 1, y - 5, 9, ColorRole::CLOUD, true);
   add_circle(scene, x + 10, y, 6, ColorRole::CLOUD, true);
@@ -91,8 +143,9 @@ void draw_cloud(Scene &scene, int x, int y) {
 }
 
 void draw_condition_icon(
-    Scene &scene, int x, int y, const std::string &condition, bool is_night) {
-  const std::string value = normalized(condition);
+    CommandStream &scene, int x, int y, const char *condition, bool is_night) {
+  char value[32];
+  normalize(condition, value, sizeof(value));
   if (is_night || contains(value, "night")) {
     add_circle(scene, x, y, 12, ColorRole::ACCENT, true);
     add_circle(scene, x + 6, y - 4, 11, ColorRole::CARD, true);
@@ -121,12 +174,13 @@ void draw_condition_icon(
   }
 }
 
-void add_card(Scene &scene, int y, int height) {
+void add_card(CommandStream &scene, int y, int height) {
   add_rect(scene, 6, y, 228, height, ColorRole::CARD, true);
   add_rect(scene, 6, y, 3, height, ColorRole::ACCENT, true);
 }
 
-void draw_wifi_icon(Scene &scene, bool available, int16_t rssi_dbm) {
+void draw_wifi_icon(
+    CommandStream &scene, bool available, int16_t rssi_dbm) {
   const uint8_t level = wifi_signal_level(available, rssi_dbm);
   const auto level_color = [&](uint8_t required) {
     return available && level >= required ? ColorRole::ACCENT : ColorRole::MUTED;
@@ -151,106 +205,124 @@ void draw_wifi_icon(Scene &scene, bool available, int16_t rssi_dbm) {
       scene, 220, 27, 2, available ? ColorRole::ACCENT : ColorRole::MUTED, true);
 
   if (!available) {
-    add_line(scene, 216, 24, 224, 32, ColorRole::WARNING);
-    add_line(scene, 224, 24, 216, 32, ColorRole::WARNING);
+    add_line(scene, 207, 7, 233, 33, ColorRole::WARNING);
+    add_line(scene, 206, 8, 232, 34, ColorRole::WARNING);
+    add_line(scene, 208, 6, 234, 32, ColorRole::WARNING);
+    add_line(scene, 233, 7, 207, 33, ColorRole::WARNING);
+    add_line(scene, 234, 8, 208, 34, ColorRole::WARNING);
+    add_line(scene, 232, 6, 206, 32, ColorRole::WARNING);
   }
 }
 
 }  // namespace
 
-std::string format_time(uint8_t hour, uint8_t minute, bool use_24_hour) {
-  char result[16];
+void format_time(
+    uint8_t hour,
+    uint8_t minute,
+    bool use_24_hour,
+    char *output,
+    size_t output_size) {
   if (use_24_hour) {
-    std::snprintf(result, sizeof(result), "%02u:%02u", hour, minute);
+    std::snprintf(output, output_size, "%02u:%02u", hour, minute);
   } else {
     const uint8_t display_hour = hour % 12U == 0U ? 12U : hour % 12U;
     std::snprintf(
-        result, sizeof(result), "%u:%02u %s", display_hour, minute,
+        output, output_size, "%u:%02u %s", display_hour, minute,
         hour < 12U ? "AM" : "PM");
   }
-  return result;
 }
 
-std::string format_date(
-    uint16_t year, uint8_t month, uint8_t day, uint8_t day_of_week) {
+void format_date(
+    uint16_t year,
+    uint8_t month,
+    uint8_t day,
+    uint8_t day_of_week,
+    char *output,
+    size_t output_size) {
   const char *weekday =
       day_of_week >= 1U && day_of_week <= 7U ? WEEKDAYS[day_of_week - 1U] : "---";
   const char *month_name =
       month >= 1U && month <= 12U ? MONTHS[month - 1U] : "---";
-  char result[32];
-  std::snprintf(result, sizeof(result), "%s, %s %u, %u", weekday, month_name, day, year);
-  return result;
+  std::snprintf(
+      output, output_size, "%s, %s %u, %u", weekday, month_name, day, year);
 }
 
-std::string format_age(uint32_t age_seconds, bool heard) {
+void format_age(
+    uint32_t age_seconds, bool heard, char *output, size_t output_size) {
   if (!heard) {
-    return "waiting";
-  }
-  char result[32];
-  if (age_seconds < 10U) {
-    return "now";
-  }
-  if (age_seconds < 60U) {
-    std::snprintf(result, sizeof(result), "%us ago", age_seconds);
+    std::snprintf(output, output_size, "waiting");
+  } else if (age_seconds < 10U) {
+    std::snprintf(output, output_size, "now");
+  } else if (age_seconds < 60U) {
+    std::snprintf(output, output_size, "%us ago", age_seconds);
   } else if (age_seconds < 3600U) {
-    std::snprintf(result, sizeof(result), "%um ago", age_seconds / 60U);
+    std::snprintf(output, output_size, "%um ago", age_seconds / 60U);
   } else if (age_seconds < 86400U) {
     std::snprintf(
-        result, sizeof(result), "%uh %um ago", age_seconds / 3600U,
+        output, output_size, "%uh %um ago", age_seconds / 3600U,
         (age_seconds % 3600U) / 60U);
   } else {
     std::snprintf(
-        result, sizeof(result), "%ud %uh ago", age_seconds / 86400U,
+        output, output_size, "%ud %uh ago", age_seconds / 86400U,
         (age_seconds % 86400U) / 3600U);
   }
-  return result;
 }
 
-std::string format_station_values(const StationView &station) {
+void format_station_values(
+    const StationView &station, char *output, size_t output_size) {
   if (!station.heard) {
-    return "--.-°C  --%";
+    std::snprintf(output, output_size, "--.-°C  --%%");
+    return;
   }
-  char result[32];
-  const int16_t absolute = station.temperature_tenths_c < 0
-                               ? -station.temperature_tenths_c
-                               : station.temperature_tenths_c;
+  const int32_t temperature = station.temperature_tenths_c;
+  const int32_t absolute = temperature < 0 ? -temperature : temperature;
   std::snprintf(
-      result, sizeof(result), "%s%d.%d°C  %u%%",
-      station.temperature_tenths_c < 0 ? "-" : "", absolute / 10,
-      absolute % 10, station.humidity_percent);
-  return result;
+      output, output_size, "%s%d.%d°C  %u%%", temperature < 0 ? "-" : "",
+      static_cast<int>(absolute / 10), static_cast<int>(absolute % 10),
+      station.humidity_percent);
 }
 
-std::string humanize_condition(const std::string &condition) {
-  if (condition.empty()) {
-    return "Weather unavailable";
+void humanize_condition(
+    const char *condition, char *output, size_t output_size) {
+  if (condition == nullptr || condition[0] == '\0') {
+    std::snprintf(output, output_size, "Weather unavailable");
+    return;
   }
-  const std::string value = normalized(condition);
-  if (value == "partlycloudy") {
-    return "Partly Cloudy";
+  char value[32];
+  normalize(condition, value, sizeof(value));
+  if (std::strcmp(value, "partlycloudy") == 0) {
+    std::snprintf(output, output_size, "Partly Cloudy");
+    return;
   }
-  if (value == "lightning-rainy") {
-    return "Lightning & Rain";
+  if (std::strcmp(value, "lightning-rainy") == 0) {
+    std::snprintf(output, output_size, "Lightning & Rain");
+    return;
   }
-  if (value == "snowy-rainy") {
-    return "Snow & Rain";
+  if (std::strcmp(value, "snowy-rainy") == 0) {
+    std::snprintf(output, output_size, "Snow & Rain");
+    return;
   }
-  if (value == "windy-variant") {
-    return "Windy";
+  if (std::strcmp(value, "windy-variant") == 0) {
+    std::snprintf(output, output_size, "Windy");
+    return;
   }
-  std::string result = value;
-  std::replace(result.begin(), result.end(), '-', ' ');
-  std::replace(result.begin(), result.end(), '_', ' ');
+
+  size_t index = 0;
   bool new_word = true;
-  for (char &character : result) {
-    if (character == ' ') {
+  while (value[index] != '\0' && index + 1U < output_size) {
+    char character = value[index];
+    if (character == '-') {
+      character = ' ';
       new_word = true;
     } else if (new_word) {
-      character = static_cast<char>(std::toupper(static_cast<unsigned char>(character)));
+      character = static_cast<char>(
+          std::toupper(static_cast<unsigned char>(character)));
       new_word = false;
     }
+    output[index] = character;
+    index++;
   }
-  return result;
+  output[index] = '\0';
 }
 
 size_t selected_secondary_index(size_t count, uint32_t now_ms) {
@@ -273,90 +345,170 @@ uint8_t wifi_signal_level(bool available, int16_t rssi_dbm) {
   return 0;
 }
 
-Scene build_scene(const ScreenSnapshot &snapshot, const LayoutOptions &options) {
-  Scene scene;
-  scene.reserve(64);
+void build_scene_impl(
+    const ScreenSnapshot &snapshot,
+    const LayoutOptions &options,
+    CommandStream &scene) {
   add_rect(scene, 0, 0, 240, 240, ColorRole::BACKGROUND, true);
   if (options.show_network) {
     draw_wifi_icon(scene, snapshot.wifi_valid, snapshot.wifi_dbm);
   }
   int y = 5;
+  char text[80];
 
   if (options.show_time) {
+    if (snapshot.time_valid) {
+      format_time(
+          snapshot.hour, snapshot.minute, options.use_24_hour, text, sizeof(text));
+    } else {
+      std::snprintf(text, sizeof(text), "--:--");
+    }
     add_text(
-        scene, 120, y, FontRole::LARGE, ColorRole::TEXT, TextAlign::CENTER,
-        snapshot.time_valid
-            ? format_time(snapshot.hour, snapshot.minute, options.use_24_hour)
-            : "--:--");
+        scene, 120, y, FontRole::LARGE, ColorRole::TEXT, TextAlign::CENTER, text);
     y += 35;
   }
   if (options.show_date) {
+    if (snapshot.time_valid) {
+      format_date(
+          snapshot.year, snapshot.month, snapshot.day, snapshot.day_of_week, text,
+          sizeof(text));
+    } else {
+      std::snprintf(text, sizeof(text), "Waiting for Home Assistant time");
+    }
     add_text(
-        scene, 120, y, FontRole::SMALL, ColorRole::MUTED, TextAlign::CENTER,
-        snapshot.time_valid
-            ? format_date(
-                  snapshot.year, snapshot.month, snapshot.day, snapshot.day_of_week)
-            : "Waiting for Home Assistant time");
+        scene, 120, y, FontRole::SMALL, ColorRole::MUTED, TextAlign::CENTER, text);
     y += 19;
   }
   if (options.show_condition) {
     add_card(scene, y, 38);
-    draw_condition_icon(scene, 28, y + 18, snapshot.condition, snapshot.is_night);
+    draw_condition_icon(
+        scene, 28, y + 18, snapshot.condition.c_str(), snapshot.is_night);
+    char condition[32];
+    humanize_condition(snapshot.condition.c_str(), text, sizeof(text));
+    ellipsize(text, 21, condition, sizeof(condition));
     add_text(
         scene, 51, y + 10, FontRole::MEDIUM, ColorRole::TEXT, TextAlign::LEFT,
-        ellipsize(humanize_condition(snapshot.condition), 21));
+        condition);
     y += 43;
   }
   if (options.show_primary) {
     add_card(scene, y, 45);
+    char name[24];
+    ellipsize(
+        snapshot.primary.name.empty() ? "Primary station"
+                                      : snapshot.primary.name.c_str(),
+        18, name, sizeof(name));
     add_text(
         scene, 14, y + 5, FontRole::SMALL, ColorRole::ACCENT, TextAlign::LEFT,
-        snapshot.primary.name.empty()
-            ? "Primary station"
-            : ellipsize(snapshot.primary.name, 18));
+        name);
+    format_age(
+        snapshot.primary.age_seconds, snapshot.primary.heard, text, sizeof(text));
     add_text(
         scene, 226, y + 5, FontRole::SMALL, ColorRole::MUTED, TextAlign::RIGHT,
-        format_age(snapshot.primary.age_seconds, snapshot.primary.heard));
+        text);
+    format_station_values(snapshot.primary, text, sizeof(text));
     add_text(
         scene, 120, y + 21, FontRole::LARGE, ColorRole::TEXT, TextAlign::CENTER,
-        format_station_values(snapshot.primary));
+        text);
     y += 50;
   }
-  if (options.show_secondary && !snapshot.secondaries.empty()) {
+  if (options.show_secondary && snapshot.secondary_count != 0U) {
     const auto &secondary =
         snapshot.secondaries[selected_secondary_index(
-            snapshot.secondaries.size(), snapshot.now_ms)];
+            snapshot.secondary_count, snapshot.now_ms)];
     add_card(scene, y, 25);
+    char name[24];
+    ellipsize(secondary.name.c_str(), 10, name, sizeof(name));
     add_text(
         scene, 14, y + 6, FontRole::SMALL, ColorRole::MUTED, TextAlign::LEFT,
-        ellipsize(secondary.name, 10));
+        name);
+    char values[32];
+    char age[32];
+    format_station_values(secondary, values, sizeof(values));
+    format_age(secondary.age_seconds, secondary.heard, age, sizeof(age));
+    std::snprintf(text, sizeof(text), "%s · %s", values, age);
     add_text(
         scene, 226, y + 6, FontRole::SMALL, ColorRole::TEXT, TextAlign::RIGHT,
-        format_station_values(secondary) + " · " +
-            format_age(secondary.age_seconds, secondary.heard));
+        text);
     y += 30;
   }
   if (options.show_sun) {
+    const char *left_label = snapshot.is_night ? "Set" : "Rise";
+    const char *left_value =
+        snapshot.is_night ? snapshot.sunset.c_str() : snapshot.sunrise.c_str();
+    const char *right_label = snapshot.is_night ? "Rise" : "Set";
+    const char *right_value =
+        snapshot.is_night ? snapshot.sunrise.c_str() : snapshot.sunset.c_str();
+    std::snprintf(
+        text, sizeof(text), "%s %s", left_label,
+        left_value[0] == '\0' ? "--:--" : left_value);
     add_text(
-        scene, 14, y + 4, FontRole::SMALL, ColorRole::SUN, TextAlign::LEFT,
-        "Rise " + (snapshot.sunrise.empty() ? "--:--" : snapshot.sunrise));
+        scene, 14, y + 4, FontRole::SMALL,
+        snapshot.is_night ? ColorRole::ACCENT : ColorRole::SUN, TextAlign::LEFT,
+        text);
+    std::snprintf(
+        text, sizeof(text), "%s %s", right_label,
+        right_value[0] == '\0' ? "--:--" : right_value);
     add_text(
-        scene, 226, y + 4, FontRole::SMALL, ColorRole::ACCENT, TextAlign::RIGHT,
-        "Set " + (snapshot.sunset.empty() ? "--:--" : snapshot.sunset));
+        scene, 226, y + 4, FontRole::SMALL,
+        snapshot.is_night ? ColorRole::SUN : ColorRole::ACCENT,
+        TextAlign::RIGHT, text);
+    if (snapshot.sun_progress_valid) {
+      constexpr int track_x = 79;
+      constexpr int track_width = 82;
+      constexpr int inner_width = track_width - 2;
+      const int elapsed =
+          inner_width * snapshot.sun_progress_percent / 100U;
+      const ColorRole progress_color =
+          snapshot.is_night ? ColorRole::ACCENT : ColorRole::SUN;
+      add_rect(
+          scene, track_x, y + 9, track_width, 5, ColorRole::MUTED, false);
+      if (elapsed > 0) {
+        add_rect(
+            scene, track_x + 1, y + 10, elapsed, 3, progress_color, true);
+      }
+      add_circle(
+          scene, track_x + 1 + elapsed, y + 11, 2, ColorRole::TEXT, true);
+    }
     y += 22;
   }
   if (options.show_network) {
-    char network[80];
-    std::snprintf(
-        network, sizeof(network), "WiFi %s  ·  %s",
-        snapshot.wifi_valid ? (std::to_string(snapshot.wifi_dbm) + " dBm").c_str()
-                            : "-- dBm",
-        snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
+    if (snapshot.wifi_valid) {
+      std::snprintf(
+          text, sizeof(text), "WiFi %d dBm  ·  %s", snapshot.wifi_dbm,
+          snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
+    } else {
+      std::snprintf(
+          text, sizeof(text), "WiFi -- dBm  ·  %s",
+          snapshot.ip_address.empty() ? "no IP" : snapshot.ip_address.c_str());
+    }
+    const int network_y = y + 3 < 226 ? y + 3 : 226;
     add_text(
-        scene, 120, std::min(y + 3, 226), FontRole::SMALL, ColorRole::MUTED,
-        TextAlign::CENTER, network);
+        scene, 120, network_y, FontRole::SMALL, ColorRole::MUTED,
+        TextAlign::CENTER, text);
   }
-  return scene;
+}
+
+void emit_scene(
+    const ScreenSnapshot &snapshot,
+    const LayoutOptions &options,
+    DrawCommandCallback callback,
+    void *context) {
+  CommandStream stream{callback, context};
+  build_scene_impl(snapshot, options, stream);
+}
+
+void build_scene(
+    const ScreenSnapshot &snapshot, const LayoutOptions &options, Scene &scene) {
+  scene.clear();
+  emit_scene(
+      snapshot, options,
+      [](void *context, const DrawCommand &command, const char *text) {
+        auto &target = *static_cast<Scene *>(context);
+        return text == nullptr ? target.push(command)
+                               : target.push_text(command, text);
+      },
+      &scene);
 }
 
 const char *color_hex(ColorRole color) {

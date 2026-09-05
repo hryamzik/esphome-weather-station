@@ -18,7 +18,15 @@ The component has three layers:
    `display_layout.*` turns that snapshot into device-neutral drawing commands.
    Both the ESPHome renderer and host SVG preview consume the same scene, so
    preview snapshots exercise production formatting, layout, icon, and
-   secondary-cycling logic.
+   secondary-cycling logic. Building a frame performs no heap allocation:
+   text is copied into bounded snapshot buffers, secondaries use fixed slots,
+   and production drawing commands stream directly to the ESPHome display.
+   Host previews collect the same stream in a fixed command array and
+   scene-local fixed text arena.
+
+The sun row consumes already-formatted rise/set text plus an optional bounded
+0–100 progress value. Day/night ordering is a presentation decision, but
+timezone and astronomy calculations remain in Home Assistant.
 
 Routing invariants:
 
@@ -31,6 +39,9 @@ Routing invariants:
   heard.
 - Unsigned millisecond subtraction preserves age/window behavior across timer
   wraparound.
+- Scene and secondary overflow never writes past capacity. The default
+  production layout is tested to fit; excess display secondaries are dropped
+  without changing router state or published entities.
 
 Adding Solight should therefore add a decoder and adapter, extend the
 compile-time protocol dispatcher/schema, and leave station/entity/display

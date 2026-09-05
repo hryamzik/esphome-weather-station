@@ -11,9 +11,10 @@ namespace {
 
 using namespace weather_station_display;
 
-std::string escape_xml(const std::string &value) {
+std::string escape_xml(const char *value) {
   std::string escaped;
-  for (char character : value) {
+  for (const char *cursor = value; *cursor != '\0'; cursor++) {
+    const char character = *cursor;
     if (character == '&') {
       escaped += "&amp;";
     } else if (character == '<') {
@@ -38,12 +39,13 @@ ScreenSnapshot base_snapshot() {
   snapshot.day_of_week = 7;
   snapshot.condition = "partlycloudy";
   snapshot.primary = {"Garden", true, 213, 47, 18};
-  snapshot.secondaries = {
-      {"Greenhouse", true, 246, 61, 75},
-      {"Balcony", true, 198, 52, 245},
-      {"Workshop", false, 0, 0, 0}};
+  snapshot.add_secondary({"Greenhouse", true, 246, 61, 75});
+  snapshot.add_secondary({"Balcony", true, 198, 52, 245});
+  snapshot.add_secondary({"Workshop", false, 0, 0, 0});
   snapshot.sunrise = "06:42";
   snapshot.sunset = "19:51";
+  snapshot.sun_progress_valid = true;
+  snapshot.sun_progress_percent = 42;
   snapshot.wifi_valid = true;
   snapshot.wifi_dbm = -58;
   snapshot.ip_address = "192.168.87.44";
@@ -57,16 +59,19 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
     snapshot.hour = 10;
     snapshot.minute = 8;
     snapshot.now_ms = 0;
+    snapshot.sun_progress_percent = 31;
   } else if (name == "night") {
     snapshot.condition = "clear-night";
     snapshot.is_night = true;
     snapshot.hour = 22;
     snapshot.minute = 14;
     snapshot.now_ms = 2000;
+    snapshot.sun_progress_percent = 64;
   } else if (name == "long-age") {
     snapshot.condition = "rainy";
     snapshot.primary.age_seconds = 15U * 86400U + 6U * 3600U;
     snapshot.secondaries[0].age_seconds = 3U * 86400U + 4U * 3600U;
+    snapshot.sun_progress_valid = false;
     snapshot.now_ms = 0;
   } else if (name == "secondary-cycle-a") {
     snapshot.now_ms = 0;
@@ -107,7 +112,7 @@ void write_svg(const Scene &scene, const std::string &path) {
                << (command.font == FontRole::LARGE ? "700" : "500")
                << "\" text-anchor=\"" << anchor
                << "\" dominant-baseline=\"hanging\">"
-               << escape_xml(command.text) << "</text>\n";
+               << escape_xml(scene.text(command)) << "</text>\n";
         break;
       }
       case CommandKind::LINE:
@@ -145,7 +150,9 @@ int main(int argc, char **argv) {
   try {
     LayoutOptions options;
     const auto snapshot = scenario(argv[1], options);
-    write_svg(build_scene(snapshot, options), argv[2]);
+    Scene scene;
+    build_scene(snapshot, options, scene);
+    write_svg(scene, argv[2]);
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';
     return 1;

@@ -8,6 +8,7 @@ __pycache__/
 .esphome/
 tests/esphome/.esphome/
 tests/esphome/.gitignore
+.esphome-compile.log
 
 # Local secrets and editor state
 .env

@@ -9,6 +9,7 @@
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/time/real_time_clock.h"
 #include "esphome/components/weather_station/weather_station.h"
+#include "esphome/components/wifi/wifi_component.h"
 
 namespace esphome {
 namespace weather_station_screen {
@@ -28,6 +29,7 @@ class WeatherStationScreen {
   void set_sun_state(text_sensor::TextSensor *sensor) { this->sun_state_ = sensor; }
   void set_sunrise(text_sensor::TextSensor *sensor) { this->sunrise_ = sensor; }
   void set_sunset(text_sensor::TextSensor *sensor) { this->sunset_ = sensor; }
+  void set_sun_progress(sensor::Sensor *sensor) { this->sun_progress_ = sensor; }
   void set_wifi_signal(sensor::Sensor *sensor) { this->wifi_signal_ = sensor; }
   void set_ip_address(text_sensor::TextSensor *sensor) { this->ip_address_ = sensor; }
 
@@ -43,7 +45,7 @@ class WeatherStationScreen {
   void render(display::Display &display);
 
  protected:
-  ::weather_station_display::ScreenSnapshot snapshot_() const;
+  void snapshot_(::weather_station_display::ScreenSnapshot &snapshot) const;
   static Color color_(::weather_station_display::ColorRole role);
 
   weather_station::WeatherStationComponent *weather_station_{nullptr};
@@ -55,6 +57,7 @@ class WeatherStationScreen {
   text_sensor::TextSensor *sun_state_{nullptr};
   text_sensor::TextSensor *sunrise_{nullptr};
   text_sensor::TextSensor *sunset_{nullptr};
+  sensor::Sensor *sun_progress_{nullptr};
   sensor::Sensor *wifi_signal_{nullptr};
   text_sensor::TextSensor *ip_address_{nullptr};
   ::weather_station_display::LayoutOptions options_;

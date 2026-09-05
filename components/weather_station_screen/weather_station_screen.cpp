@@ -3,6 +3,7 @@
 #include "weather_station_screen.h"
 
 #include <cmath>
+#include <cstring>
 
 #include "esphome/core/hal.h"
 
@@ -12,8 +13,9 @@ namespace weather_station_screen {
 using ::weather_station_display::CommandKind;
 using ::weather_station_display::FontRole;
 
-::weather_station_display::ScreenSnapshot WeatherStationScreen::snapshot_() const {
-  ::weather_station_display::ScreenSnapshot snapshot;
+void WeatherStationScreen::snapshot_(
+    ::weather_station_display::ScreenSnapshot &snapshot) const {
+  snapshot = {};
   snapshot.now_ms = millis();
 
   if (this->time_ != nullptr) {
@@ -29,41 +31,73 @@ using ::weather_station_display::FontRole;
     }
   }
   if (this->condition_ != nullptr && this->condition_->has_state()) {
-    snapshot.condition = this->condition_->state;
+    snapshot.condition.assign(this->condition_->state.c_str());
   }
   if (this->sun_state_ != nullptr && this->sun_state_->has_state()) {
     snapshot.is_night = this->sun_state_->state == "below_horizon";
   } else {
-    snapshot.is_night = snapshot.condition == "clear-night";
+    snapshot.is_night = std::strcmp(snapshot.condition.c_str(), "clear-night") == 0;
   }
   if (this->sunrise_ != nullptr && this->sunrise_->has_state()) {
-    snapshot.sunrise = this->sunrise_->state;
+    snapshot.sunrise.assign(this->sunrise_->state.c_str());
   }
   if (this->sunset_ != nullptr && this->sunset_->has_state()) {
-    snapshot.sunset = this->sunset_->state;
+    snapshot.sunset.assign(this->sunset_->state.c_str());
+  }
+  if (this->sun_progress_ != nullptr && this->sun_progress_->has_state() &&
+      std::isfinite(this->sun_progress_->state)) {
+    const float progress = this->sun_progress_->state;
+    snapshot.sun_progress_valid = true;
+    snapshot.sun_progress_percent =
+        progress <= 0.0f
+            ? 0U
+            : (progress >= 100.0f
+                   ? 100U
+                   : static_cast<uint8_t>(std::lround(progress)));
   }
   if (this->wifi_signal_ != nullptr && this->wifi_signal_->has_state()) {
     snapshot.wifi_valid = true;
     snapshot.wifi_dbm = static_cast<int16_t>(std::lround(this->wifi_signal_->state));
   }
   if (this->ip_address_ != nullptr && this->ip_address_->has_state()) {
-    snapshot.ip_address = this->ip_address_->state;
+    snapshot.ip_address.assign(this->ip_address_->state.c_str());
+  }
+  if (wifi::global_wifi_component != nullptr &&
+      wifi::global_wifi_component->is_connected()) {
+    if (this->wifi_signal_ == nullptr) {
+      const int8_t rssi = wifi::global_wifi_component->wifi_rssi();
+      if (rssi != wifi::WIFI_RSSI_DISCONNECTED) {
+        snapshot.wifi_valid = true;
+        snapshot.wifi_dbm = rssi;
+      }
+    }
+    if (this->ip_address_ == nullptr) {
+      const auto addresses =
+          wifi::global_wifi_component->wifi_sta_ip_addresses();
+      for (const auto &address : addresses) {
+        if (address.is_set()) {
+          char buffer[network::IP_ADDRESS_BUFFER_SIZE];
+          snapshot.ip_address.assign(address.str_to(buffer));
+          break;
+        }
+      }
+    }
   }
 
   if (this->weather_station_ == nullptr) {
-    return snapshot;
+    return;
   }
   const auto &router = this->weather_station_->router();
   const size_t primary = router.primary_station_index();
   if (primary != ::weather_station_domain::StationRouter::NO_STATION) {
     const auto &definition = router.station(primary);
     const auto &state = router.state(primary);
-    snapshot.primary = {
-        definition.name,
-        state.heard,
-        state.reading.temperature_tenths_c,
-        state.reading.humidity_percent,
-        state.age_seconds(snapshot.now_ms)};
+    snapshot.primary.name.assign(definition.name.c_str());
+    snapshot.primary.heard = state.heard;
+    snapshot.primary.temperature_tenths_c =
+        state.reading.temperature_tenths_c;
+    snapshot.primary.humidity_percent = state.reading.humidity_percent;
+    snapshot.primary.age_seconds = state.age_seconds(snapshot.now_ms);
   }
   for (size_t index = 0; index < router.station_count(); index++) {
     if (index == primary) {
@@ -71,14 +105,14 @@ using ::weather_station_display::FontRole;
     }
     const auto &definition = router.station(index);
     const auto &state = router.state(index);
-    snapshot.secondaries.push_back(
-        {definition.name,
-         state.heard,
-         state.reading.temperature_tenths_c,
-         state.reading.humidity_percent,
-         state.age_seconds(snapshot.now_ms)});
+    ::weather_station_display::StationView secondary;
+    secondary.name.assign(definition.name.c_str());
+    secondary.heard = state.heard;
+    secondary.temperature_tenths_c = state.reading.temperature_tenths_c;
+    secondary.humidity_percent = state.reading.humidity_percent;
+    secondary.age_seconds = state.age_seconds(snapshot.now_ms);
+    snapshot.add_secondary(secondary);
   }
-  return snapshot;
 }
 
 Color WeatherStationScreen::color_(::weather_station_display::ColorRole role) {
@@ -107,17 +141,27 @@ Color WeatherStationScreen::color_(::weather_station_display::ColorRole role) {
 }
 
 void WeatherStationScreen::render(display::Display &display) {
-  const auto scene =
-      ::weather_station_display::build_scene(this->snapshot_(), this->options_);
-  for (const auto &command : scene) {
-    const Color color = color_(command.color);
+  ::weather_station_display::ScreenSnapshot snapshot;
+  this->snapshot_(snapshot);
+  struct RenderContext {
+    WeatherStationScreen *screen;
+    display::Display *display;
+  } context{this, &display};
+
+  ::weather_station_display::emit_scene(
+      snapshot, this->options_,
+      [](void *raw_context,
+         const ::weather_station_display::DrawCommand &command,
+         const char *text) {
+    auto &render = *static_cast<RenderContext *>(raw_context);
+    const Color color = WeatherStationScreen::color_(command.color);
     switch (command.kind) {
       case CommandKind::TEXT: {
-        font::Font *font = this->small_font_;
+        font::Font *font = render.screen->small_font_;
         if (command.font == FontRole::MEDIUM) {
-          font = this->medium_font_;
+          font = render.screen->medium_font_;
         } else if (command.font == FontRole::LARGE) {
-          font = this->large_font_;
+          font = render.screen->large_font_;
         }
         display::TextAlign align = display::TextAlign::TOP_LEFT;
         if (command.align == ::weather_station_display::TextAlign::CENTER) {
@@ -126,27 +170,33 @@ void WeatherStationScreen::render(display::Display &display) {
           align = display::TextAlign::TOP_RIGHT;
         }
         if (font != nullptr) {
-          display.print(command.x1, command.y1, font, color, align, command.text.c_str());
+          render.display->print(
+              command.x1, command.y1, font, color, align, text);
         }
         break;
       }
       case CommandKind::LINE:
-        display.line(command.x1, command.y1, command.x2, command.y2, color);
+        render.display->line(
+            command.x1, command.y1, command.x2, command.y2, color);
         break;
       case CommandKind::RECTANGLE:
-        display.rectangle(command.x1, command.y1, command.x2, command.y2, color);
+        render.display->rectangle(
+            command.x1, command.y1, command.x2, command.y2, color);
         break;
       case CommandKind::FILLED_RECTANGLE:
-        display.filled_rectangle(command.x1, command.y1, command.x2, command.y2, color);
+        render.display->filled_rectangle(
+            command.x1, command.y1, command.x2, command.y2, color);
         break;
       case CommandKind::CIRCLE:
-        display.circle(command.x1, command.y1, command.radius, color);
+        render.display->circle(command.x1, command.y1, command.radius, color);
         break;
       case CommandKind::FILLED_CIRCLE:
-        display.filled_circle(command.x1, command.y1, command.radius, color);
+        render.display->filled_circle(
+            command.x1, command.y1, command.radius, color);
         break;
     }
-  }
+    return true;
+  }, &context);
 }
 
 }  // namespace weather_station_screen

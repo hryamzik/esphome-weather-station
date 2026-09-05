@@ -56,6 +56,10 @@ a separate mock layout for screenshots.
 
 Run `make preview`, review every SVG in `docs/previews/`, then run `make test`.
 Tests require committed previews to match the deterministic production layout.
+The production `build_scene` path must remain allocation-free after setup.
+Use fixed-capacity snapshot/scene storage, preserve explicit truncation and
+overflow behavior, and extend the allocation-counting native test whenever the
+render data model changes.
 Weather glyphs should be original primitives where practical. Document the
 source, copyright, and license of any imported font, icon, or image in
 `THIRD_PARTY_NOTICES.md`.

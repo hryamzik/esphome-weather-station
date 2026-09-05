@@ -42,5 +42,8 @@
 <text x="226" y="158" fill="#f4f7fb" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">19.8°C  52% · 4m ago</text>
 <text x="14" y="186" fill="#ffc857" font-size="11" font-weight="500" text-anchor="start" dominant-baseline="hanging">Rise 06:42</text>
 <text x="226" y="186" fill="#36d1c4" font-size="11" font-weight="500" text-anchor="end" dominant-baseline="hanging">Set 19:51</text>
+<rect x="79" y="191" width="82" height="5" rx="3" fill="none" stroke="#8ca5bc"/>
+<rect x="80" y="192" width="33" height="3" rx="3" fill="#ffc857"/>
+<circle cx="113" cy="193" r="2" fill="#f4f7fb"/>
 <text x="120" y="207" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">WiFi -58 dBm  ·  192.168.87.44</text>
 </svg>

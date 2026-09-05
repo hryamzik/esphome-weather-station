@@ -37,14 +37,11 @@ text_sensor:
   - platform: homeassistant
     id: next_sunset
     entity_id: sensor.next_sunset_display
-  - platform: wifi_info
-    ip_address:
-      id: wifi_ip
 
 sensor:
-  - platform: wifi_signal
-    id: wifi_rssi
-    update_interval: 30s
+  - platform: homeassistant
+    id: sun_progress
+    entity_id: sensor.sun_cycle_progress
 
 remote_receiver:
   id: rf_receiver
@@ -135,8 +132,7 @@ weather_station_screen:
   sun_state_id: sun_state
   sunrise_id: next_sunrise
   sunset_id: next_sunset
-  wifi_signal_id: wifi_rssi
-  ip_address_id: wifi_ip
+  sun_progress_id: sun_progress
   sections:
     time: true
     date: true
@@ -157,7 +153,7 @@ display:
     dc_pin: GPIO0
     reset_pin: GPIO2
     color_depth: 8
-    buffer_size: 12.5%
+    buffer_size: 12%
     spi_mode: mode3
     update_interval: 1s
     lambda: |-

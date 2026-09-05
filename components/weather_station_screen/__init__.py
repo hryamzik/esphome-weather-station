@@ -6,7 +6,7 @@ import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
 
-DEPENDENCIES = ["display", "weather_station"]
+DEPENDENCIES = ["display", "weather_station", "wifi"]
 
 CONF_CONDITION_ID = "condition_id"
 CONF_FONTS = "fonts"
@@ -23,6 +23,7 @@ CONF_SHOW_SECONDARY = "secondary"
 CONF_SHOW_SUN = "sun"
 CONF_SHOW_TIME = "time"
 CONF_SMALL = "small"
+CONF_SUN_PROGRESS_ID = "sun_progress_id"
 CONF_SUN_STATE_ID = "sun_state_id"
 CONF_SUNRISE_ID = "sunrise_id"
 CONF_SUNSET_ID = "sunset_id"
@@ -68,6 +69,7 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_SUN_STATE_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_SUNRISE_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_SUNSET_ID): cv.use_id(text_sensor.TextSensor),
+        cv.Optional(CONF_SUN_PROGRESS_ID): cv.use_id(sensor.Sensor),
         cv.Optional(CONF_WIFI_SIGNAL_ID): cv.use_id(sensor.Sensor),
         cv.Optional(CONF_IP_ADDRESS_ID): cv.use_id(text_sensor.TextSensor),
         cv.Optional(CONF_SECTIONS, default={}): SECTIONS_SCHEMA,
@@ -94,6 +96,7 @@ async def to_code(config):
         (CONF_SUN_STATE_ID, var.set_sun_state),
         (CONF_SUNRISE_ID, var.set_sunrise),
         (CONF_SUNSET_ID, var.set_sunset),
+        (CONF_SUN_PROGRESS_ID, var.set_sun_progress),
         (CONF_WIFI_SIGNAL_ID, var.set_wifi_signal),
         (CONF_IP_ADDRESS_ID, var.set_ip_address),
     )

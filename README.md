@@ -62,10 +62,11 @@ weather_station:
 
 Receiver pins vary between device revisions; verify your board before flashing.
 See `examples/geekmagic-smalltv-ultra.yaml` for the complete display and
-hardware configuration. Its 12.5% striped display buffer is intentional: a
-quarter-screen RGB565 buffer consumes about 28.8 KB and leaves too little
-runtime heap on the 1 MB ESP8266 once encrypted API, Wi-Fi, and RF decoding are
-enabled.
+hardware configuration. Its 12% striped 8-bit display setting is intentional.
+ESPHome 2026.8.2 rejects 6.25% (`buffer_size` has a 12% minimum); its stripe
+denominator logic maps 12% to one-tenth of this 240-row panel, or 5,760 pixel
+bytes. That saves 1,440 bytes versus the former 12.5%/one-eighth buffer while
+remaining an exact row divisor.
 
 ## 240×240 single-screen display
 
@@ -75,6 +76,9 @@ seconds. Time comes from ESPHome's Home Assistant time platform, so the device
 does not duplicate timezone configuration. Home Assistant condition, sun
 state, sunrise, and sunset text entity IDs are ordinary configurable YAML
 imports. Sunrise/sunset values may be clock times or preformatted countdowns.
+During daytime the sun row reads Rise → Set; at night it reads Set → Rise. An
+optional HA numeric sensor supplies 0–100% progress for the compact bar between
+them, keeping timezone and astronomy calculations out of the device.
 
 <img src="docs/previews/day.svg" alt="Day display preview" width="240">
 <img src="docs/previews/night.svg" alt="Night display preview" width="240">
@@ -96,6 +100,11 @@ text_sensor:
     id: next_sunrise
     entity_id: sensor.next_sunrise_display
 
+sensor:
+  - platform: homeassistant
+    id: sun_progress
+    entity_id: sensor.sun_cycle_progress
+
 weather_station_screen:
   id: weather_screen
   weather_station_id: weather_decoder
@@ -104,6 +113,7 @@ weather_station_screen:
   hour_format: 12h # or 24h
   condition_id: current_condition
   sunrise_id: next_sunrise
+  sun_progress_id: sun_progress
   sections:
     time: true
     date: true
@@ -122,9 +132,42 @@ display:
 All seven sections can be hidden independently. The network section controls
 both the detailed bottom RSSI/IP row and the traditional top-right Wi-Fi icon.
 The icon has distinct weak/fair/good levels and an explicit crossed-out state
-when RSSI is unavailable. Icons are original primitive vector glyphs drawn by
-this project; no third-party weather icon set is embedded. The example obtains
+when RSSI is unavailable; its full-glyph diagonal cross remains visible at
+240×240. The sun progress bar disappears cleanly when `sun_progress_id` has no
+state or is omitted. Icons are original primitive vector glyphs drawn by this
+project; no third-party weather icon set is embedded. The example obtains
 Roboto from Google Fonts under OFL-1.1; see `THIRD_PARTY_NOTICES.md`.
+
+### ESP8266 memory budget
+
+The production render cycle is allocation-free: snapshots use fixed text and
+eight fixed secondary slots, and drawing commands stream directly to the
+display without an intermediate container. Host previews use a bounded scene
+with 52 fixed commands and a 384-byte text arena. Overflow is explicit and
+host-tested; configured station entities are unaffected if more than eight
+secondaries exist, but only the first eight are display candidates. The
+ESPHome YAML interface is unchanged.
+
+For the tested GeekMagic target, measure with encrypted API connected after at
+least one RF decode and display render:
+
+- free heap target: **at least 24 KiB**
+- largest free block target: **at least 16 KiB**
+- CI static RAM ceiling: **55%**
+- CI flash ceiling: **65%**
+
+Runtime targets require staged-device measurement; linker percentages are only
+secondary regression guards. The full compile target enforces both static
+ceilings, and the native display test instruments 1,000 production scene
+builds and requires zero allocations after setup. Home Assistant condition and
+sun values remain optional: missing HA/time/network state renders explicit
+fallbacks while local RF station values continue to display.
+
+The ESPHome wrapper reads RSSI and IP directly from the configured Wi-Fi
+component, avoiding dedicated `wifi_signal` and `wifi_info` entities. Existing
+`wifi_signal_id` and `ip_address_id` settings remain supported as explicit
+overrides. This dependency stays in the thin ESPHome wrapper; snapshots and the
+host-testable layout remain platform-independent.
 
 ## Routing behavior
 
@@ -167,8 +210,9 @@ make esphome-compile
 
 `make test` compiles the production decoder natively and decodes the committed,
 second-receiver-verified Flipper BinRAW capture. It also checks display
-formatting and verifies every committed SVG against the production layout
-engine. `make preview` regenerates deterministic screenshots in
+formatting, fixed-capacity overflow behavior, and allocation-free repeated
+scene generation, and verifies every committed SVG against the production
+layout engine. `make preview` regenerates deterministic screenshots in
 `docs/previews/` without firmware or hardware. See
 `docs/architecture.md` for module boundaries, `docs/supported-protocols.md` for
 support confidence, and `CONTRIBUTING.md` for the fixture ladder required for
