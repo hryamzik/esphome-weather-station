@@ -229,6 +229,7 @@ void format_station_values(
 void humanize_condition(const char *condition, char *output, size_t output_size);
 size_t selected_secondary_index(size_t count, uint32_t now_ms);
 uint8_t wifi_signal_level(bool available, int16_t rssi_dbm);
+bool update_wifi_startup_gate(bool wifi_connected, bool &wifi_ever_connected);
 using DrawCommandCallback =
     bool (*)(void *context, const DrawCommand &command, const char *text);
 void emit_scene(
@@ -236,8 +237,10 @@ void emit_scene(
     const LayoutOptions &options,
     DrawCommandCallback callback,
     void *context);
+void emit_startup_scene(DrawCommandCallback callback, void *context);
 void build_scene(
     const ScreenSnapshot &snapshot, const LayoutOptions &options, Scene &scene);
+void build_startup_scene(Scene &scene);
 const char *color_hex(ColorRole color);
 
 }  // namespace weather_station_display

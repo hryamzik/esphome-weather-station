@@ -170,6 +170,7 @@ display:
     # Keep enough ESP8266 heap for encrypted API/Wi-Fi and the RF decoder.
     buffer_size: 12%
     spi_mode: mode3
+    # The screen component renders its minimal startup view until Wi-Fi connects.
     update_interval: 1s
     lambda: |-
       id(weather_screen).render(it);

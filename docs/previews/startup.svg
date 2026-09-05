@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 240 240">
+<title>ESPHome Weather Station 240x240 preview</title>
+<style>text{font-family:Roboto,Arial,sans-serif}</style>
+<rect x="0" y="0" width="240" height="240" rx="3" fill="#07111f"/>
+<line x1="208" y1="15" x2="214" y2="10" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="214" y1="10" x2="220" y2="8" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="220" y1="8" x2="226" y2="10" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="226" y1="10" x2="232" y2="15" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="212" y1="19" x2="216" y2="15" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="216" y1="15" x2="220" y2="14" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="220" y1="14" x2="224" y2="15" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="224" y1="15" x2="228" y2="19" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="216" y1="23" x2="220" y2="20" stroke="#8ca5bc" stroke-width="2"/>
+<line x1="220" y1="20" x2="224" y2="23" stroke="#8ca5bc" stroke-width="2"/>
+<circle cx="220" cy="27" r="2" fill="#8ca5bc"/>
+<line x1="207" y1="7" x2="233" y2="33" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="206" y1="8" x2="232" y2="34" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="208" y1="6" x2="234" y2="32" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="233" y1="7" x2="207" y2="33" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="234" y1="8" x2="208" y2="34" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="232" y1="6" x2="206" y2="32" stroke="#ff6b6b" stroke-width="2"/>
+<text x="120" y="112" fill="#8ca5bc" font-size="11" font-weight="500" text-anchor="middle" dominant-baseline="hanging">Connecting WiFi...</text>
+</svg>

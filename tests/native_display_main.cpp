@@ -116,6 +116,13 @@ int main() {
   assert(wifi_signal_level(true, -78) == 1);
   assert(wifi_signal_level(true, -67) == 2);
   assert(wifi_signal_level(true, -55) == 3);
+  bool wifi_ever_connected = false;
+  assert(!update_wifi_startup_gate(false, wifi_ever_connected));
+  assert(!wifi_ever_connected);
+  assert(update_wifi_startup_gate(true, wifi_ever_connected));
+  assert(wifi_ever_connected);
+  assert(update_wifi_startup_gate(false, wifi_ever_connected));
+  assert(wifi_ever_connected);
 
   FixedText<8> short_text;
   assert(!short_text.assign("123456789"));
@@ -228,6 +235,14 @@ int main() {
   assert(full_text.size() == 0U);
   assert(full_text.overflowed());
 
+  Scene startup_scene;
+  build_startup_scene(startup_scene);
+  assert(!startup_scene.overflowed());
+  assert(startup_scene.size() <= 20U);
+  assert(scene_contains(startup_scene, "Connecting WiFi..."));
+  assert(wifi_icon_commands(startup_scene, ColorRole::WARNING) == 6U);
+  assert(!scene_contains(startup_scene, "Garden"));
+
   // Setup is complete. Rebuilding the production scene must never call new.
   options = {};
   snapshot.wifi_valid = true;
@@ -236,6 +251,12 @@ int main() {
     snapshot.now_ms = static_cast<uint32_t>(iteration * 1000U);
     build_scene(snapshot, options, scene);
     assert(!scene.overflowed());
+  }
+  assert(allocation_count == allocations_before);
+
+  for (size_t iteration = 0; iteration < 1000U; iteration++) {
+    build_startup_scene(startup_scene);
+    assert(!startup_scene.overflowed());
   }
   assert(allocation_count == allocations_before);
 
@@ -251,6 +272,18 @@ int main() {
         },
         &emitted_commands);
     assert(emitted_commands != 0U);
+  }
+  assert(allocation_count == allocations_before);
+
+  for (size_t iteration = 0; iteration < 1000U; iteration++) {
+    emitted_commands = 0;
+    emit_startup_scene(
+        [](void *context, const DrawCommand &, const char *) {
+          (*static_cast<size_t *>(context))++;
+          return true;
+        },
+        &emitted_commands);
+    assert(emitted_commands <= 20U);
   }
   assert(allocation_count == allocations_before);
 }

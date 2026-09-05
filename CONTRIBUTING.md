@@ -59,7 +59,9 @@ Tests require committed previews to match the deterministic production layout.
 The production `build_scene` path must remain allocation-free after setup.
 Use fixed-capacity snapshot/scene storage, preserve explicit truncation and
 overflow behavior, and extend the allocation-counting native test whenever the
-render data model changes.
+render data model changes. Keep the pre-association startup path bounded and
+allocation-free; it must not construct or emit the full scene until the
+latched Wi-Fi gate opens.
 Weather glyphs should be original primitives where practical. Document the
 source, copyright, and license of any imported font, icon, or image in
 `THIRD_PARTY_NOTICES.md`.

@@ -81,6 +81,8 @@ ScreenSnapshot scenario(const std::string &name, LayoutOptions &options) {
   } else if (name == "wifi-unavailable") {
     snapshot.wifi_valid = false;
     snapshot.ip_address.clear();
+  } else if (name == "startup") {
+    // Startup uses its own minimal scene; the snapshot is intentionally unused.
   } else {
     throw std::runtime_error("unknown preview scenario: " + name);
   }
@@ -151,7 +153,11 @@ int main(int argc, char **argv) {
     LayoutOptions options;
     const auto snapshot = scenario(argv[1], options);
     Scene scene;
-    build_scene(snapshot, options, scene);
+    if (std::string(argv[1]) == "startup") {
+      build_startup_scene(scene);
+    } else {
+      build_scene(snapshot, options, scene);
+    }
     write_svg(scene, argv[2]);
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';

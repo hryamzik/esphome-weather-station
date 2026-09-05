@@ -24,6 +24,11 @@ The component has three layers:
    Host previews collect the same stream in a fixed command array and
    scene-local fixed text arena.
 
+At boot, a host-tested Wi-Fi gate bypasses snapshot construction and full
+layout streaming until ESPHome reports one successful association. The gate
+latches for the boot lifetime, so later network loss does not suppress local
+station rendering.
+
 The sun row consumes already-formatted rise/set text plus an optional bounded
 0–100 progress value. Day/night ordering is a presentation decision, but
 timezone and astronomy calculations remain in Home Assistant.

@@ -345,6 +345,14 @@ uint8_t wifi_signal_level(bool available, int16_t rssi_dbm) {
   return 0;
 }
 
+bool update_wifi_startup_gate(
+    bool wifi_connected, bool &wifi_ever_connected) {
+  if (wifi_connected) {
+    wifi_ever_connected = true;
+  }
+  return wifi_ever_connected;
+}
+
 void build_scene_impl(
     const ScreenSnapshot &snapshot,
     const LayoutOptions &options,
@@ -498,11 +506,31 @@ void emit_scene(
   build_scene_impl(snapshot, options, stream);
 }
 
+void emit_startup_scene(DrawCommandCallback callback, void *context) {
+  CommandStream stream{callback, context};
+  add_rect(stream, 0, 0, 240, 240, ColorRole::BACKGROUND, true);
+  draw_wifi_icon(stream, false, 0);
+  add_text(
+      stream, 120, 112, FontRole::SMALL, ColorRole::MUTED, TextAlign::CENTER,
+      "Connecting WiFi...");
+}
+
 void build_scene(
     const ScreenSnapshot &snapshot, const LayoutOptions &options, Scene &scene) {
   scene.clear();
   emit_scene(
       snapshot, options,
+      [](void *context, const DrawCommand &command, const char *text) {
+        auto &target = *static_cast<Scene *>(context);
+        return text == nullptr ? target.push(command)
+                               : target.push_text(command, text);
+      },
+      &scene);
+}
+
+void build_startup_scene(Scene &scene) {
+  scene.clear();
+  emit_startup_scene(
       [](void *context, const DrawCommand &command, const char *text) {
         auto &target = *static_cast<Scene *>(context);
         return text == nullptr ? target.push(command)

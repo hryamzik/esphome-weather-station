@@ -10,6 +10,7 @@ REPOSITORY = Path(__file__).resolve().parent.parent
 COMPONENT = REPOSITORY / "components" / "weather_station_screen"
 OUTPUT = REPOSITORY / "docs" / "previews"
 SCENARIOS = (
+    "startup",
     "day",
     "night",
     "long-age",

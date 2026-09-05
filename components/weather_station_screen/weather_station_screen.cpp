@@ -55,15 +55,18 @@ void WeatherStationScreen::snapshot_(
                    ? 100U
                    : static_cast<uint8_t>(std::lround(progress)));
   }
-  if (this->wifi_signal_ != nullptr && this->wifi_signal_->has_state()) {
-    snapshot.wifi_valid = true;
-    snapshot.wifi_dbm = static_cast<int16_t>(std::lround(this->wifi_signal_->state));
-  }
-  if (this->ip_address_ != nullptr && this->ip_address_->has_state()) {
-    snapshot.ip_address.assign(this->ip_address_->state.c_str());
-  }
-  if (wifi::global_wifi_component != nullptr &&
-      wifi::global_wifi_component->is_connected()) {
+  const bool wifi_connected =
+      wifi::global_wifi_component != nullptr &&
+      wifi::global_wifi_component->is_connected();
+  if (wifi_connected) {
+    if (this->wifi_signal_ != nullptr && this->wifi_signal_->has_state()) {
+      snapshot.wifi_valid = true;
+      snapshot.wifi_dbm =
+          static_cast<int16_t>(std::lround(this->wifi_signal_->state));
+    }
+    if (this->ip_address_ != nullptr && this->ip_address_->has_state()) {
+      snapshot.ip_address.assign(this->ip_address_->state.c_str());
+    }
     if (this->wifi_signal_ == nullptr) {
       const int8_t rssi = wifi::global_wifi_component->wifi_rssi();
       if (rssi != wifi::WIFI_RSSI_DISCONNECTED) {
@@ -141,15 +144,12 @@ Color WeatherStationScreen::color_(::weather_station_display::ColorRole role) {
 }
 
 void WeatherStationScreen::render(display::Display &display) {
-  ::weather_station_display::ScreenSnapshot snapshot;
-  this->snapshot_(snapshot);
   struct RenderContext {
     WeatherStationScreen *screen;
     display::Display *display;
   } context{this, &display};
 
-  ::weather_station_display::emit_scene(
-      snapshot, this->options_,
+  const auto draw_command =
       [](void *raw_context,
          const ::weather_station_display::DrawCommand &command,
          const char *text) {
@@ -196,7 +196,21 @@ void WeatherStationScreen::render(display::Display &display) {
         break;
     }
     return true;
-  }, &context);
+  };
+
+  const bool wifi_connected =
+      wifi::global_wifi_component != nullptr &&
+      wifi::global_wifi_component->is_connected();
+  if (!::weather_station_display::update_wifi_startup_gate(
+          wifi_connected, this->wifi_ever_connected_)) {
+    ::weather_station_display::emit_startup_scene(draw_command, &context);
+    return;
+  }
+
+  ::weather_station_display::ScreenSnapshot snapshot;
+  this->snapshot_(snapshot);
+  ::weather_station_display::emit_scene(
+      snapshot, this->options_, draw_command, &context);
 }
 
 }  // namespace weather_station_screen

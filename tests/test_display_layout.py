@@ -39,6 +39,7 @@ def test_committed_previews_match_production_layout(tmp_path):
     _compile(executable, REPOSITORY / "tools" / "preview_renderer.cpp")
 
     for scenario in (
+        "startup",
         "day",
         "night",
         "long-age",

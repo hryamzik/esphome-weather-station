@@ -80,6 +80,7 @@ During daytime the sun row reads Rise → Set; at night it reads Set → Rise. A
 optional HA numeric sensor supplies 0–100% progress for the compact bar between
 them, keeping timezone and astronomy calculations out of the device.
 
+<img src="docs/previews/startup.svg" alt="Wi-Fi association startup view" width="240">
 <img src="docs/previews/day.svg" alt="Day display preview" width="240">
 <img src="docs/previews/night.svg" alt="Night display preview" width="240">
 <img src="docs/previews/long-age.svg" alt="Long station age preview" width="240">
@@ -168,6 +169,21 @@ component, avoiding dedicated `wifi_signal` and `wifi_info` entities. Existing
 `wifi_signal_id` and `ip_address_id` settings remain supported as explicit
 overrides. This dependency stays in the thin ESPHome wrapper; snapshots and the
 host-testable layout remain platform-independent.
+
+### Startup safety
+
+Before Wi-Fi has connected once after boot, `render()` draws only the
+allocation-free startup background, disconnected Wi-Fi glyph, and
+`Connecting WiFi...` label. It does not snapshot Home Assistant/router state
+or stream the full scene while the ESP8266 is asynchronously associating.
+Once ESPHome reports a real connection, the screen latches into full rendering
+for the rest of that boot. A later outage therefore keeps local RF weather
+visible and changes only network diagnostics to the disconnected state.
+
+This gate addresses hardware evidence that simple fill rendering remains
+networked while full striped scene drawing during association does not. The
+one-second update interval is intentionally unchanged: delaying every frame
+would mask the association-specific issue and degrade the running display.
 
 ## Routing behavior
 

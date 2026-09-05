@@ -61,6 +61,7 @@ class WeatherStationScreen {
   sensor::Sensor *wifi_signal_{nullptr};
   text_sensor::TextSensor *ip_address_{nullptr};
   ::weather_station_display::LayoutOptions options_;
+  bool wifi_ever_connected_{false};
 };
 
 }  // namespace weather_station_screen
