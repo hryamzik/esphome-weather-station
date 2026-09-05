@@ -28,6 +28,7 @@ remote_receiver:
   idle: 4ms
 
 weather_station:
+  id: weather_decoder
   receiver_id: rf_receiver
   protocols: [oregon2]
   stations:
