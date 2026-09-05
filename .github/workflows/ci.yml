@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: make setup
+      - name: Run Python and native decoder tests
+        run: make test
+      - name: Validate ESPHome configuration
+        run: make esphome-config
+      - name: Compile ESPHome firmware
+        run: make esphome-compile

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+esphome:
+  name: weather-station-compile-test
+
+esp8266:
+  board: esp01_1m
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+
+logger:
+  baud_rate: 0
+
+remote_receiver:
+  id: rf_receiver
+  pin:
+    number: GPIO3
+    mode:
+      input: true
+      pullup: false
+  tolerance: 50%
+  filter: 250us
+  idle: 4ms
+
+weather_station:
+  id: weather_decoder
+  receiver_id: rf_receiver
+  temperature:
+    name: Outdoor Temperature
+  humidity:
+    name: Outdoor Humidity
+  channel:
+    name: Weather Station Channel
+  rolling_code:
+    name: Weather Station Rolling Code
+  battery_low:
+    name: Weather Station Battery Low

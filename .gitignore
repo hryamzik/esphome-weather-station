@@ -1,0 +1,15 @@
+.DS_Store
+.pytest_cache/
+.venv/
+__pycache__/
+*.py[cod]
+
+# ESPHome/PlatformIO generated state
+.esphome/
+tests/esphome/.esphome/
+
+# Local secrets and editor state
+.env
+secrets.yaml
+.vscode/
+.idea/

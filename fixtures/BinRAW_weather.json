@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "name": "BinRAW_weather",
+  "signal_file": "BinRAW_weather.sub",
+  "captured": {
+    "flipper_protocol": "BinRAW",
+    "frequency_hz": 433920000
+  },
+  "expected": {
+    "battery_low": false,
+    "bit_count": 32,
+    "channel": 1,
+    "humidity_percent": 39,
+    "oregon_variant": "Oregon2",
+    "raw_data": "0x1D2018B0",
+    "rolling_code": "0x8B",
+    "sensor_id": "0x1D20",
+    "sensor_model": "THGR122N",
+    "temperature_c": 30.3
+  },
+  "flipper_path": "/ext/subghz/ihome/BinRAW_weather.sub",
+  "repeats": 3,
+  "verified_by_second_receiver": true
+}
