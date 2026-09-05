@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "oregon2_decoder.h"
+#include "station_router.h"
 
 namespace {
 
@@ -69,6 +70,61 @@ int main(int argc, char **argv) {
   assert(reading.temperature_tenths_c == 303);
   assert(reading.humidity_percent == 39);
   assert(reading.raw_fixed_data == 0x1D2018B0);
+
+  using namespace weather_station_domain;
+  StationRouter router;
+  assert(router.add_station(
+      {"greenhouse", "Greenhouse", {Protocol::OREGON2, 0x1D20, 2, true, 0x42}, false}));
+  assert(router.add_station(
+      {"garden", "Garden", {Protocol::OREGON2, 0x1D20, 1, false, 0}, false}));
+  assert(!router.add_station(
+      {"ambiguous", "Ambiguous", {Protocol::OREGON2, 0x1D20, 1, true, 0x8B}, false}));
+  assert(!router.add_station(
+      {"garden", "Duplicate ID", {Protocol::OREGON2, 0x1D20, 3, false, 0}, false}));
+
+  const auto fixture_reading = from_oregon2(
+      reading.sensor_model,
+      reading.channel,
+      reading.rolling_code,
+      reading.temperature_tenths_c,
+      reading.humidity_percent,
+      reading.battery_low);
+  const auto garden_route = router.route(fixture_reading, 1000);
+  assert(garden_route.kind == RouteKind::CONFIGURED);
+  assert(garden_route.station_index == 1);
+  assert(router.primary_station_index() == 1);
+  assert(router.state(1).heard);
+  assert(router.state(1).age_seconds(6500) == 5);
+
+  const auto greenhouse = from_oregon2(0x1D20, 2, 0x42, 215, 45, false);
+  const auto greenhouse_route = router.route(greenhouse, 7000);
+  assert(greenhouse_route.kind == RouteKind::CONFIGURED);
+  assert(greenhouse_route.station_index == 0);
+  assert(router.primary_station_index() == 1);
+
+  router.add_ignore({Protocol::OREGON2, 0x1D20, 2, true, 0x42});
+  assert(router.route(greenhouse, 8000).kind == RouteKind::IGNORED);
+  assert(router.state(0).last_seen_ms == 7000);
+
+  const auto unknown = from_oregon2(0x1D20, 3, 0x77, 199, 50, false);
+  assert(router.route(unknown, 10000).kind == RouteKind::UNKNOWN);
+  assert(
+      router.last_unknown_yaml() ==
+      "selector:\n  protocol: oregon2\n  model: 0x1D20\n  channel: 3\n"
+      "  rolling_code: 0x77");
+  assert(router.route(unknown, 11000).kind == RouteKind::UNKNOWN);
+  assert(router.recent_unknown_count(12000, 5000) == 1);
+  assert(router.recent_unknown_count(16000, 5000) == 1);
+  assert(router.recent_unknown_count(16001, 5000) == 0);
+
+  StationRouter explicit_primary;
+  assert(explicit_primary.add_station(
+      {"one", "One", {Protocol::OREGON2, 0x1D20, 1, false, 0}, true}));
+  assert(explicit_primary.add_station(
+      {"two", "Two", {Protocol::OREGON2, 0x1D20, 2, false, 0}, false}));
+  assert(explicit_primary.primary_station_index() == 0);
+  assert(!explicit_primary.add_station(
+      {"three", "Three", {Protocol::OREGON2, 0x1D20, 3, false, 0}, true}));
 
   auto inverted_pulses = pulses;
   for (auto &pulse : inverted_pulses) {

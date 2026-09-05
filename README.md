@@ -2,9 +2,8 @@
 
 # ESPHome Weather Station
 
-An ESPHome external component for receiving 433.92 MHz weather sensors on the
-GeekMagic SmallTV Ultra. Milestone 1 extracts a tested Oregon2 decoder and its
-reproducible fixture-based verification into a standalone public project.
+An ESPHome external component for receiving and independently routing multiple
+433.92 MHz weather stations on the GeekMagic SmallTV Ultra.
 
 The tested target is the **GeekMagic SmallTV Ultra ESP8266, 240×240 display
 variant**, using its existing OOK receiver path. The component currently
@@ -12,8 +11,8 @@ publishes temperature, humidity, channel, rolling code, and battery-low state
 from an Oregon Scientific THGR122N.
 
 Future CC1101 hardware support is intentionally planned only in this public
-repository; it is not implemented in Milestone 1. Multi-station UI, Solight
-decoding, display integration, and CAD are also out of scope for this baseline.
+repository. Solight decoding, a polished multi-station display, and CAD are not
+implemented yet.
 
 ## Use as an external component
 
@@ -31,21 +30,65 @@ remote_receiver:
 
 weather_station:
   receiver_id: rf_receiver
-  temperature:
-    name: Outdoor Temperature
-  humidity:
-    name: Outdoor Humidity
-  channel:
-    name: Weather Station Channel
-  rolling_code:
-    name: Weather Station Rolling Code
-  battery_low:
-    name: Weather Station Battery Low
+  protocols: [oregon2]
+  stations:
+    - id: garden
+      name: Garden
+      primary: true
+      selector:
+        protocol: oregon2
+        model: 0x1D20
+        channel: 1
+        # Omit rolling_code to accept sensor battery resets.
+      temperature:
+        name: Garden Temperature
+      humidity:
+        name: Garden Humidity
+      battery_low:
+        name: Garden Battery Low
+      age:
+        name: Garden Station Age
+  ignore:
+    - protocol: oregon2
+      model: 0x1D20
+      channel: 3
+  diagnostics:
+    last_unknown_selector:
+      name: Last Unknown Weather Station
+    recent_unknown_count:
+      name: Recent Unknown Weather Stations
+    unknown_window: 5min
 ```
 
 Receiver pins vary between device revisions; verify your board before flashing.
-The complete compile fixture is in
-`tests/esphome/geekmagic-smalltv-ultra.yaml`.
+See `examples/geekmagic-smalltv-ultra.yaml` for a complete component example.
+
+## Routing behavior
+
+- `protocols` is a compile-time allow-list. Milestone 2 accepts only `oregon2`;
+  unsupported names are configuration errors. Protocol adapters and capability
+  flags provide the extension seam for Solight.
+- Every configured station has a stable, separate set of optional entities.
+  Selectors require protocol, model, and channel. `rolling_code` is optional;
+  omitting it matches any rolling code.
+- Overlapping configured selectors are rejected, including a rolling-code
+  wildcard beside a specific code. `ignore` selectors may overlap and always
+  win.
+- Decodable but unconfigured stations update discovery diagnostics only. The
+  last-unknown text entity contains a ready-to-paste YAML `selector`, while the
+  count reports distinct unknown selectors heard in the configured window.
+- One station may set `primary: true`. Without one, the first configured
+  station heard becomes the stable primary fallback. Latest reading and
+  last-seen/age state remain available through the routing domain for a future
+  display; `age` exposes that state as an optional ESPHome sensor.
+
+## Migrating from Milestone 1
+
+The former flat `temperature`, `humidity`, `channel`, `rolling_code`, and
+`battery_low` keys did not identify a station and therefore could not safely
+support multiple transmitters. Move those entities under a `stations` entry,
+add its selector, and add `protocols: [oregon2]` as shown above. The flat form
+is intentionally rejected instead of silently assigning unknown transmitters.
 
 ## Development
 
@@ -60,8 +103,9 @@ make esphome-compile
 
 `make test` compiles the production decoder natively and decodes the committed,
 second-receiver-verified Flipper BinRAW capture. See
-`docs/supported-protocols.md` for support confidence and `CONTRIBUTING.md` for
-the fixture ladder required for new protocols.
+`docs/architecture.md` for module boundaries, `docs/supported-protocols.md` for
+support confidence, and `CONTRIBUTING.md` for the fixture ladder required for
+new protocols.
 
 ## Attribution and licensing
 

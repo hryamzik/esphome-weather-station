@@ -22,6 +22,7 @@ def test_production_decoder_decodes_verified_binraw_fixture(tmp_path):
             f"-I{COMPONENT}",
             str(REPOSITORY / "tests" / "native_decoder_main.cpp"),
             str(COMPONENT / "oregon2_decoder.cpp"),
+            str(COMPONENT / "station_router.cpp"),
             "-o",
             str(executable),
         ],

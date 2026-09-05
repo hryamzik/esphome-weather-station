@@ -21,7 +21,7 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: make setup
-      - name: Run Python and native decoder tests
+      - name: Run Python and native routing tests
         run: make test
       - name: Validate ESPHome configuration
         run: make esphome-config

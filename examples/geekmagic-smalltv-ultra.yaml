@@ -1,18 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-esphome:
-  name: weather-station-compile-test
-
-esp8266:
-  board: esp01_1m
-
 external_components:
-  - source:
-      type: local
-      path: ../../components
-
-logger:
-  baud_rate: 0
+  - source: github://hryamzik/esphome-weather-station@main
+    components: [weather_station]
 
 remote_receiver:
   id: rf_receiver
@@ -26,13 +16,13 @@ remote_receiver:
   idle: 4ms
 
 weather_station:
-  id: weather_decoder
   receiver_id: rf_receiver
   protocols:
     - oregon2
   stations:
     - id: garden
       name: Garden
+      primary: true
       selector:
         protocol: oregon2
         model: 0x1D20
@@ -58,6 +48,8 @@ weather_station:
         rolling_code: 0x42
       temperature:
         name: Greenhouse Temperature
+      humidity:
+        name: Greenhouse Humidity
   ignore:
     - protocol: oregon2
       model: 0x1D20

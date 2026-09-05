@@ -7,6 +7,7 @@ __pycache__/
 # ESPHome/PlatformIO generated state
 .esphome/
 tests/esphome/.esphome/
+tests/esphome/.gitignore
 
 # Local secrets and editor state
 .env

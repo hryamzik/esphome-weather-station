@@ -2,19 +2,26 @@
 
 # Contributing
 
-Keep protocol decoders independent of ESPHome in `components/weather_station/`;
-the ESPHome wrapper should only translate receiver pulses and publish entities.
-Changes must retain C++17 native buildability and carry SPDX identifiers.
+Keep protocol decoders and `station_router.*` independent of ESPHome in
+`components/weather_station/`. The ESPHome wrapper should only translate
+receiver pulses, configure routing, and publish entities. Changes must retain
+C++17 native buildability and carry SPDX identifiers.
 
 ## Adding a protocol
 
 1. Add a focused decoder and reading type beside `oregon2_decoder.*`.
 2. Add native tests for valid, inverted, noisy, truncated, and out-of-range
    input where applicable.
-3. Wire the decoder into `WeatherStationComponent` without changing existing
-   entity behavior unexpectedly.
-4. Extend the ESPHome compile fixture.
-5. Update the supported-protocol matrix and describe any model limitations.
+3. Normalize its output into a `DecodedReading` with protocol-neutral identity,
+   capability flags, values, and last-seen behavior.
+4. Add the protocol name to the compile-time schema allow-list and dispatcher.
+5. Add native routing tests plus valid and invalid ESPHome schema cases.
+6. Extend the ESPHome compile fixture and update the protocol matrix.
+
+Selectors must remain deterministic. Test exact rolling-code selectors,
+rolling-code wildcards, overlap rejection, ignore precedence, unknown
+discovery, and primary fallback. Never resolve overlapping configured stations
+by declaration order.
 
 Do not copy protocol code from a reference project unless its provenance and
 license are compatible and explicitly documented. Pin behavioral references
