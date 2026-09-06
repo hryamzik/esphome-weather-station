@@ -11,7 +11,9 @@ publishes temperature, humidity, channel, rolling code, and battery-low state
 from an Oregon Scientific THGR122N.
 
 Future CC1101 hardware support is intentionally planned only in this public
-repository. Solight decoding, page switching, and CAD are not implemented yet.
+repository. Solight decoding and page switching are not implemented. A printable
+SRX882S holder and photographs of the installed receiver are included under
+[`hardware/`](hardware/).
 
 ## Use as an external component
 
@@ -67,6 +69,16 @@ ESPHome 2026.8.2 rejects 6.25% (`buffer_size` has a 12% minimum); its stripe
 denominator logic maps 12% to one-tenth of this 240-row panel, or 5,760 pixel
 bytes. That saves 1,440 bytes versus the former 12.5%/one-eighth buffer while
 remaining an exact row divisor.
+
+## Hardware and printable holder
+
+The repository includes editable FreeCAD source plus 3MF and STL exports for an
+internal SRX882S holder. See [`hardware/cad/`](hardware/cad/) for the files and
+printing notes, and [`hardware/README.md`](hardware/README.md) for installation
+photos and wiring cautions.
+
+<img src="hardware/geekmagic-srx882s-installed-rear.jpg" alt="SRX882S receiver installed inside GeekMagic SmallTV Ultra" width="360">
+<img src="hardware/geekmagic-srx882s-holder-closeup.jpg" alt="Close-up of printed SRX882S radio holder" width="360">
 
 ## 240×240 single-screen display
 
@@ -162,7 +174,7 @@ large temperature/humidity value uses the right side. A heard station becomes
 stale only after its age exceeds `stale_after` (five minutes by default), so
 5:00 remains fresh and 5:01 is stale. Stale values use the muted gray while the
 unchanged human-readable age turns red. The worst-case `12:59 PM` clock is
-shifted left when the network icon is visible so their bounds do not overlap.
+centered while retaining clearance from the network icon.
 
 ### ESP8266 memory budget
 
@@ -269,5 +281,6 @@ repository published no tags. Its nominal Oregon2 timings and decoded behavior
 served as a reference; this decoder was independently implemented against
 published protocol behavior and the verified capture. See `NOTICE.md`.
 
-Software is licensed under `GPL-3.0-or-later`. Future hardware design assets
-under `hardware/cad/` are reserved for `CERN-OHL-S-2.0`; no CAD is included yet.
+Software and documentation are licensed under `GPL-3.0-or-later`. Hardware
+design assets under `hardware/cad/` are licensed under `CERN-OHL-S-2.0`; the
+complete hardware licence text is included with those files.
