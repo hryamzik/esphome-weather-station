@@ -77,6 +77,7 @@ internal SRX882S holder. See [`hardware/cad/`](hardware/cad/) for the files and
 printing notes, and [`hardware/README.md`](hardware/README.md) for installation
 photos and wiring cautions.
 
+<img src="hardware/geekmagic-weather-station-assembled.jpg" alt="Assembled GeekMagic weather station" width="360">
 <img src="hardware/geekmagic-srx882s-installed-rear.jpg" alt="SRX882S receiver installed inside GeekMagic SmallTV Ultra" width="360">
 <img src="hardware/geekmagic-srx882s-holder-closeup.jpg" alt="Close-up of printed SRX882S radio holder" width="360">
 

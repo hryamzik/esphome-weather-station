@@ -6,6 +6,10 @@ The tested assembly adds an SRX882S 433.92 MHz OOK receiver to a GeekMagic
 SmallTV Ultra. A printed holder keeps the receiver inside the enclosure; its
 editable and printable files are in [`cad/`](cad/).
 
+## Assembled station
+
+![Assembled GeekMagic weather station](geekmagic-weather-station-assembled.jpg)
+
 ## Installed receiver
 
 ![SRX882S receiver installed behind the GeekMagic board](geekmagic-srx882s-installed-rear.jpg)
